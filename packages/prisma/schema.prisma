@@ -1,0 +1,160 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  // output   = "./generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/**
+ * model BaseModel {
+ * id        String   @id @default(cuid())
+ * createdAt DateTime @default(now())
+ * updatedAt DateTime @updatedAt
+ * deletedAt DateTime?
+ * isDeleted Boolean  @default(false)
+ * }
+ */
+
+model User {
+  id        String    @id @default(cuid())
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+  isDeleted Boolean   @default(false) @map("is_deleted")
+
+  username  String    @unique @db.VarChar(100)
+  email     String    @unique @db.VarChar(255)
+  password  String    @db.VarChar(255)
+  profile   Profile?
+  token     String?   @db.VarChar(255)
+  lastLogin DateTime? @default(now())
+  isActive  Boolean   @default(true)
+
+  sentMessages     Message[]             @relation("SentMessages")
+  receivedMessages Message[]             @relation("ReceivedMessages")
+  messageGroups    MessageGroups[]
+  messageGroupMembers  MessageGroupMembers[]
+
+  @@index([username], name: "idx_user_username")
+  @@index([email], name: "idx_user_email")
+  @@map("users")
+}
+
+model Profile {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String   @unique @map("user_id")
+  firstName String   @map("first_name") @db.VarChar(100)
+  lastName  String   @map("last_name") @db.VarChar(100)
+  avatar    String?  @map("avatar") @db.VarChar(255) // URL to the avatar image
+  bioId     String?  @unique @map("bio_id")
+  bio       Biodata? @relation(fields: [bioId], references: [id], onDelete: Cascade)
+
+  @@index([userId], name: "idx_profile_user_id")
+  @@index([bioId], name: "idx_profile_bio_id")
+  @@map("profiles")
+}
+
+model Biodata {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  birthDate DateTime @map("birth_date")
+  gender    String   @map("gender") @db.VarChar(10)
+  phone     String   @map("phone") @db.VarChar(20)
+  address   String   @map("address") @db.VarChar(255)
+
+  Profile Profile[]
+
+  @@map("biodata")
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  senderId            String  @map("sender_id")
+  isDeletedBySender   Boolean @default(false) @map("is_deleted_by_sender")
+  receiverId          String  @map("receiver_id")
+  isDeletedByReceiver Boolean @default(false) @map("is_deleted_by_receiver")
+
+  content String @db.Text
+
+  sender    User                   @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver  User                   @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  messageGroupMessages MessageGroupMessages[]
+
+  @@index([senderId], name: "idx_message_sender_id")
+  @@index([receiverId], name: "idx_message_receiver_id")
+  @@map("messages")
+}
+
+model MessageGroups {
+  id        String   @id @default(cuid())
+  name      String?  @unique @db.VarChar(255)
+  description String? @db.Text
+  avatar    String?  @db.VarChar(255) 
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+  isDeleted Boolean  @default(false) @map("is_deleted")
+  isPublic  Boolean  @default(false) @map("is_public")
+
+  ownerId  String                 @map("owner_id")
+  owner    User                   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  messages MessageGroupMessages[]
+  members  MessageGroupMembers[]
+
+  @@unique([name, ownerId], name: "unique_message_group_name_owner")
+  @@index([ownerId], name: "idx_message_group_owner_id")
+  @@index([name], name: "idx_message_group_name")
+  @@map("message_groups")
+}
+
+model MessageGroupMembers {
+  id        String    @id @default(cuid())
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+  isDeleted Boolean   @default(false) @map("is_deleted")
+
+  userId         String @map("user_id")
+  messageGroupId String @map("message_group_id")
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messageGroup MessageGroups @relation(fields: [messageGroupId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, messageGroupId], name: "unique_user_message_group")
+  @@map("message_group_members")
+}
+
+model MessageGroupMessages {
+  id               String    @id @default(cuid())
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+  deletedByOwner   DateTime? @map("deleted_by_owner")
+  isDeletedByOwner Boolean   @default(false) @map("is_deleted_by_owner")
+
+  messageGroupId String @map("message_group_id")
+  messageId      String @map("message_id")
+
+  messageGroup MessageGroups @relation(fields: [messageGroupId], references: [id], onDelete: Cascade)
+  message      Message       @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@unique([messageGroupId, messageId], name: "unique_message_group_message")
+  @@map("message_group_messages")
+}

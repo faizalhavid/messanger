@@ -1,0 +1,17 @@
+{
+  "name": "@messanger/types",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "types": "index.ts",
+  "type": "module",
+  "private": false,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "dependencies": {
+    "@prisma/client": "workspace:*"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}
