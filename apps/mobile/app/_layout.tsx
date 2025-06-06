@@ -10,6 +10,7 @@ import { useColorScheme } from '@/components/useColorScheme';
 import React from 'react';
 import { useAuthStore } from '@/store/auth';
 import AuthProvider from '@/context/AuthProvider';
+import { Text } from 'react-native';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -59,12 +60,15 @@ function RootLayoutNav() {
   const colorScheme = useColorScheme();
   const { token, isLoading } = useAuthStore();
 
-  if (isLoading) {
-    return;
-  }
+  React.useEffect(() => {
+    console.log('Pathname:', pathName);
+    if (!isLoading && !token && !pathName.startsWith('/auth')) {
+      route.replace('/auth/login');
+    }
+  }, [isLoading, token, pathName, route]);
 
-  if (!isLoading && !token && !pathName.startsWith('/auth')) {
-    route.replace('/auth');
+  if (isLoading) {
+    return <Text>Loading...</Text>;
   }
   return (
 
