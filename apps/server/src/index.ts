@@ -9,19 +9,30 @@ import { groupMessagesController } from './message/controllers/group-messages-co
 import { errorHandler } from './handlers/error-handler';
 import { authMiddleware } from './middleware';
 import { websocket, webSocketConfig } from './websocket/config';
+import { cors } from '@hono/cors';
 
 const app = new Hono<{ Variables: HonoContext }>();
 
 app.get('/ws', webSocketConfig);
-app.use(authMiddleware);
-app.onError(errorHandler);
-app.get('/', (c) => c.text('Hello Hono!'))
-app.route('/users', userController);
-app.route('/auth', authController);
-app.route('/profile', profileController);
-app.route('/messages', messagesController);
-app.route('/message-groups', messageGroupsController);
-app.route('/group-messages', groupMessagesController);
+
+const api = new Hono<{ Variables: HonoContext }>();
+
+api.use(authMiddleware);
+app.use('*', cors({
+    origin: 'http://localhost:8081',
+    allowMethods: ['GET', 'POST', 'PUT', 'DELETE'],
+}));
+api.onError(errorHandler);
+api.get('', (c) => c.text('Hello Hono!'))
+api.route('/users', userController);
+api.route('/auth', authController);
+api.route('/profile', profileController);
+api.route('/messages', messagesController);
+api.route('/message-groups', messageGroupsController);
+api.route('/group-messages', groupMessagesController);
+
+app.route('/api', api);
+
 export default app;
 
 export const server = Bun.serve({ fetch: app.fetch, port: 3000, websocket });

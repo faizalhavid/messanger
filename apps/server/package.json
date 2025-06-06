@@ -9,7 +9,7 @@
     "@messanger/types": "workspace:*",
     "@messanger/logging": "workspace:*",
     "@messanger/prisma": "workspace:*",
-    "@prisma/client": "workspace:*"
+    "@prisma/client": "^6.9.0"
   },
   "devDependencies": {
     "@types/bun": "latest"

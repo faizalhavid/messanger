@@ -151,7 +151,7 @@ describe('Message WebSocket Controller', () => {
                 const response = JSON.parse(event.data);
                 if (response.event === 'auth-success') {
                     // simulate sending a message via API
-                    const response = await fetch('http://localhost:3000/messages', {
+                    const response = await fetch('http://localhost:3000/api/messages', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',

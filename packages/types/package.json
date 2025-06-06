@@ -9,7 +9,7 @@
     "@types/bun": "latest"
   },
   "dependencies": {
-    "@prisma/client": "workspace:*"
+    "@prisma/client": "^6.9.0"
   },
   "peerDependencies": {
     "typescript": "^5"

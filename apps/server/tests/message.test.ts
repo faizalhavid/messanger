@@ -18,7 +18,7 @@ describe('GET Message', () => {
 
     })
     it('should show all user messages', async () => {
-        const response = await fetch('http://localhost:3000/messages', {
+        const response = await fetch('http://localhost:3000/api/messages', {
             method: 'GET',
             headers: { 'Authorization': usersTest[0].token }
         });
@@ -33,7 +33,7 @@ describe('GET Message', () => {
     });
 
     it('should show a specific message by ID', async () => {
-        const response = await fetch('http://localhost:3000/messages/1', {
+        const response = await fetch('http://localhost:3000/api/messages/1', {
             method: 'GET',
             headers: { 'Authorization': usersTest[0].token }
         });
@@ -60,7 +60,7 @@ describe('POST Message', () => {
         await MessageTest.clearAllMessages(usersTest[1].id);
     })
     it('should create a new message', async () => {
-        const response = await fetch('http://localhost:3000/messages', {
+        const response = await fetch('http://localhost:3000/api/messages', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -123,7 +123,7 @@ describe('DELETE Message', () => {
                 const data = JSON.parse(event.data);
                 if (data.event === 'auth-success') {
                     // Receiver fetch all messages
-                    const getResponse = await fetch('http://localhost:3000/messages', {
+                    const getResponse = await fetch('http://localhost:3000/api/messages', {
                         method: 'GET',
                         headers: { 'Authorization': usersTest[1].token }
                     });
@@ -143,7 +143,7 @@ describe('DELETE Message', () => {
                     wsSender.onmessage = async (event) => {
                         const senderData = JSON.parse(event.data);
                         if (senderData.event === 'auth-success' && messageId) {
-                            const delResponse = await fetch(`http://localhost:3000/messages/${messageId}`, {
+                            const delResponse = await fetch(`http://localhost:3000/api/messages/${messageId}`, {
                                 method: 'DELETE',
                                 headers: { 'Authorization': usersTest[0].token }
                             });

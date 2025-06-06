@@ -16,7 +16,7 @@ describe('Get Message Group', () => {
 
     })
     it('should return all message groups', async () => {
-        const response = await fetch('http://localhost:3000/message-groups', {
+        const response = await fetch('http://localhost:3000/api/message-groups', {
             method: 'GET',
             headers: { 'Authorization': usersTest[0].token }
         });
@@ -30,7 +30,7 @@ describe('Get Message Group', () => {
     });
 
     it('should return message group by id', async () => {
-        const response = await fetch('http://localhost:3000/message-groups/1', {
+        const response = await fetch('http://localhost:3000/api/message-groups/1', {
             method: 'GET',
             headers: { 'Authorization': usersTest[0].token }
         });
@@ -58,7 +58,7 @@ describe('Create Message Group', () => {
     });
 
     it('should create a message group', async () => {
-        const response = await fetch('http://localhost:3000/message-groups', {
+        const response = await fetch('http://localhost:3000/api/message-groups', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -99,7 +99,7 @@ describe('Update Message Group', () => {
     });
 
     it('should update a message group name', async () => {
-        const response = await fetch('http://localhost:3000/message-groups/1', {
+        const response = await fetch('http://localhost:3000/api/message-groups/1', {
             method: 'PATCH',
             headers: {
                 'Content-Type': 'application/json',
@@ -119,7 +119,7 @@ describe('Update Message Group', () => {
     });
 
     it('should update members of a message group', async () => {
-        const response = await fetch('http://localhost:3000/message-groups/1', {
+        const response = await fetch('http://localhost:3000/api/message-groups/1', {
             method: 'PATCH',
             headers: {
                 'Content-Type': 'application/json',
@@ -143,7 +143,7 @@ describe('Update Message Group', () => {
 
     // TODO : this is test can pass when we implement APIError handling in the service
     it('should not allow non-owner to update group', async () => {
-        const response = await fetch('http://localhost:3000/message-groups/1', {
+        const response = await fetch('http://localhost:3000/api/message-groups/1', {
             method: 'PATCH',
             headers: {
                 'Content-Type': 'application/json',
@@ -183,7 +183,7 @@ describe('Delete Message Group', () => {
     });
 
     it('should delete a message group', async () => {
-        const response = await fetch('http://localhost:3000/message-groups/1', {
+        const response = await fetch('http://localhost:3000/api/message-groups/1', {
             method: 'DELETE',
             headers: { 'Authorization': usersTest[0].token }
         });
@@ -194,7 +194,7 @@ describe('Delete Message Group', () => {
         // expect(body.success).toBe(true);
         // expect(body.data).toBeUndefined();
         // Verify the group is deleted
-        const groupResponse = await fetch('http://localhost:3000/message-groups', {
+        const groupResponse = await fetch('http://localhost:3000/api/message-groups', {
             method: 'GET',
             headers: { 'Authorization': usersTest[0].token }
         });
@@ -206,7 +206,7 @@ describe('Delete Message Group', () => {
     });
 
     it('should delete a member from a message group', async () => {
-        const response = await fetch(`http://localhost:3000/message-groups/1/members/${usersTest[1].id}`, {
+        const response = await fetch(`http://localhost:3000/api/message-groups/1/members/${usersTest[1].id}`, {
             method: 'DELETE',
             headers: { 'Authorization': usersTest[0].token }
         });
@@ -215,7 +215,7 @@ describe('Delete Message Group', () => {
         console.log('Delete member from message group response:', body);
         //expect(response.status).toBe(204);
 
-        const groupResponse = await fetch('http://localhost:3000/message-groups/1', {
+        const groupResponse = await fetch('http://localhost:3000/api/message-groups/1', {
             method: 'GET',
             headers: { 'Authorization': usersTest[0].token }
         });
@@ -231,7 +231,7 @@ describe('Delete Message Group', () => {
 
     // TODO : this is test can pass when we implement APIError handling in the service
     it('should not allow non-owner to delete group', async () => {
-        const response = await fetch('http://localhost:3000/message-groups/1', {
+        const response = await fetch('http://localhost:3000/api/message-groups/1', {
             method: 'DELETE',
             headers: { 'Authorization': usersTest[1].token }
         });

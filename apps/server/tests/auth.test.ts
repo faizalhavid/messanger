@@ -5,12 +5,12 @@ import { logger } from '@messanger/logging';
 
 describe('POST REGISTER', () => {
 
-    afterEach(async () => {
-        await UserTest.delete(usersTest[0].username);
-    })
+    // afterEach(async () => {
+    //     await UserTest.delete(usersTest[0].username);
+    // })
 
     it('should reject register when user request is invalid', async () => {
-        const response = await fetch('http://localhost:3000/auth/register', {
+        const response = await fetch('http://localhost:3000/api/auth/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -30,7 +30,7 @@ describe('POST REGISTER', () => {
 
     it('should reject register when user already exists', async () => {
         await UserTest.create(usersTest[0]);
-        const response = await fetch('http://localhost:3000/auth/register', {
+        const response = await fetch('http://localhost:3000/api/auth/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -51,7 +51,7 @@ describe('POST REGISTER', () => {
 
     it('should register a new user successfully', async () => {
         await UserTest.delete(usersTest[0].username); // Ensure user does not exist before test
-        const response = await fetch('http://localhost:3000/auth/register', {
+        const response = await fetch('http://localhost:3000/api/auth/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -86,7 +86,7 @@ describe('POST LOGIN', () => {
     })
 
     it('should reject login when user email is invalid', async () => {
-        const response = await fetch('http://localhost:3000/auth/login', {
+        const response = await fetch('http://localhost:3000/api/auth/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -104,7 +104,7 @@ describe('POST LOGIN', () => {
     });
 
     it('should reject login when user password is invalid', async () => {
-        const response = await fetch('http://localhost:3000/auth/login', {
+        const response = await fetch('http://localhost:3000/api/auth/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -122,7 +122,7 @@ describe('POST LOGIN', () => {
 
 
     it('should reject login when user does not exist', async () => {
-        const response = await fetch('http://localhost:3000/auth/login', {
+        const response = await fetch('http://localhost:3000/api/auth/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

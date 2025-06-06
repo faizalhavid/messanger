@@ -1,12 +1,15 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+import { Redirect, Stack, usePathname, useRouter } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
+import { use, useEffect } from 'react';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/components/useColorScheme';
+import React from 'react';
+import { useAuthStore } from '@/store/auth';
+import AuthProvider from '@/context/AuthProvider';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -23,7 +26,12 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+    // SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+    'SFProText-Bold': require('../assets/fonts/SF-Pro-Text-Bold.otf'),
+    'SFProText-Semibold': require('../assets/fonts/SF-Pro-Text-Semibold.otf'),
+    'SFProText-Medium': require('../assets/fonts/SF-Pro-Text-Medium.otf'),
+    'SFProText-Light': require('../assets/fonts/SF-Pro-Text-Light.otf'),
+    'SFProText-Thin': require('../assets/fonts/SF-Pro-Text-Thin.otf'),
     ...FontAwesome.font,
   });
 
@@ -46,14 +54,29 @@ export default function RootLayout() {
 }
 
 function RootLayoutNav() {
+  const route = useRouter();
+  const pathName = usePathname();
   const colorScheme = useColorScheme();
+  const { token, isLoading } = useAuthStore();
 
+  if (isLoading) {
+    return;
+  }
+
+  if (!isLoading && !token && !pathName.startsWith('/auth')) {
+    route.replace('/auth');
+  }
   return (
+
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-      </Stack>
+      <AuthProvider>
+        <Stack>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+        </Stack>
+      </AuthProvider>
+
+
     </ThemeProvider>
   );
 }

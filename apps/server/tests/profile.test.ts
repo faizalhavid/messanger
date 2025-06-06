@@ -11,7 +11,7 @@ describe('PATCH PROFILE', () => {
 
 
     it('should rejected if token is not provided', async () => {
-        const response = await fetch('http://localhost:3000/profile', {
+        const response = await fetch('http://localhost:3000/api/profile', {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' }
         });
@@ -21,7 +21,7 @@ describe('PATCH PROFILE', () => {
         //expect(body.errors).toContainAllKeys('Unauthorized');
     });
     it('should rejected if update profile is invalid', async () => {
-        const response = await fetch('http://localhost:3000/profile', {
+        const response = await fetch('http://localhost:3000/api/profile', {
             method: 'PATCH',
             headers: {
                 'Authorization': usersTest[0].token,
@@ -38,7 +38,7 @@ describe('PATCH PROFILE', () => {
     });
 
     it('should success if profile is valid (only firstname)', async () => {
-        const response = await fetch('http://localhost:3000/profile', {
+        const response = await fetch('http://localhost:3000/api/profile', {
             method: 'PATCH',
             headers: {
                 'Authorization': usersTest[0].token,
@@ -56,7 +56,7 @@ describe('PATCH PROFILE', () => {
     });
 
     it('should success if profile is valid (all fields)', async () => {
-        const response = await fetch('http://localhost:3000/profile', {
+        const response = await fetch('http://localhost:3000/api/profile', {
             method: 'PATCH',
             headers: {
                 'Authorization': usersTest[0].token,
@@ -90,7 +90,7 @@ describe('GET PROFILE', () => {
     })
 
     it('should return profile data', async () => {
-        const response = await fetch('http://localhost:3000/profile', {
+        const response = await fetch('http://localhost:3000/api/profile', {
             method: 'GET',
             headers: {
                 'Authorization': usersTest[0].token,

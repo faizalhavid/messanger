@@ -14,8 +14,13 @@
   },
   "dependencies": {
     "@expo/vector-icons": "^14.1.0",
+    "@messanger/logging": "workspace:*",
+    "@messanger/types": "workspace:*",
+    "@react-native-async-storage/async-storage": "2.1.2",
     "@react-navigation/native": "^7.1.6",
-    "expo": "~53.0.10",
+    "@tanstack/react-query": "^5.80.6",
+    "axios": "^1.9.0",
+    "expo": "^53.0.10",
     "expo-font": "~13.3.1",
     "expo-linking": "~7.1.5",
     "expo-router": "~5.0.7",
@@ -29,7 +34,8 @@
     "react-native-reanimated": "~3.17.4",
     "react-native-safe-area-context": "5.4.0",
     "react-native-screens": "~4.11.1",
-    "react-native-web": "~0.20.0"
+    "react-native-web": "~0.20.0",
+    "zustand": "^5.0.5"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

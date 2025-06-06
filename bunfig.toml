@@ -1,0 +1,5 @@
+[install]
+workspaces = [
+  "apps/*",
+  "packages/*"
+]

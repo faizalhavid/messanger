@@ -16,7 +16,7 @@ describe('POST Message Group', () => {
     });
 
     it('should send a group message', async () => {
-        const response = await fetch('http://localhost:3000/group-messages/1', {
+        const response = await fetch('http://localhost:3000/api/group-messages/1', {
             method: 'POST',
             headers: { 'Authorization': usersTest[0].token, 'Content-Type': 'application/json' },
             body: JSON.stringify({ content: 'Hello Group!' })
@@ -62,7 +62,7 @@ describe('GET Group Messages', () => {
     });
 
     it('should get group messages', async () => {
-        const response = await fetch('http://localhost:3000/group-messages/1', {
+        const response = await fetch('http://localhost:3000/api/group-messages/1', {
             method: 'GET',
             headers: { 'Authorization': usersTest[0].token }
         });
@@ -75,7 +75,7 @@ describe('GET Group Messages', () => {
     });
 
     // it('should get group messages detail', async () => {
-    //     const response = await fetch('http://localhost:3000/group-messages/1/messages/1', {
+    //     const response = await fetch('http://localhost:3000/api/group-messages/1/messages/1', {
     //         method: 'GET',
     //         headers: { 'Authorization': usersTest[0].token }
     //     });
@@ -120,7 +120,7 @@ describe('DELETE Group Message', () => {
     });
 
     it('should delete a group message', async () => {
-        const response = await fetch('http://localhost:3000/group-messages/1/messages/1', {
+        const response = await fetch('http://localhost:3000/api/group-messages/1/messages/1', {
             method: 'DELETE',
             headers: { 'Authorization': usersTest[0].token }
         });
@@ -131,7 +131,7 @@ describe('DELETE Group Message', () => {
         expect(body.success).toBe(true);
 
         // Verify the message is deleted
-        const groupResponse = await fetch('http://localhost:3000/group-messages/1', {
+        const groupResponse = await fetch('http://localhost:3000/api/group-messages/1', {
             method: 'GET',
             headers: { 'Authorization': usersTest[0].token }
         });
@@ -145,7 +145,7 @@ describe('DELETE Group Message', () => {
     });
 
     it('should delete messages in a group by owner', async () => {
-        const response = await fetch('http://localhost:3000/group-messages/1/messages/1/by-owner', {
+        const response = await fetch('http://localhost:3000/api/group-messages/1/messages/1/by-owner', {
             method: 'DELETE',
             headers: { 'Authorization': usersTest[0].token }
         });
@@ -155,7 +155,7 @@ describe('DELETE Group Message', () => {
         expect(response.status).toBe(200);
         expect(body.success).toBe(true);
         // Verify the message is deleted
-        const groupResponse = await fetch('http://localhost:3000/group-messages/1', {
+        const groupResponse = await fetch('http://localhost:3000/api/group-messages/1', {
             method: 'GET',
             headers: { 'Authorization': usersTest[0].token }
         });
