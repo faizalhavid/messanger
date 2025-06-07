@@ -1,7 +1,7 @@
 import { prismaClient } from "@messanger/prisma";
-import { UserPublic } from "@types/user/user";
+import { UserPublic } from "@messanger/types";
 import { HTTPException } from "hono/http-exception";
-import { tokenSchema } from "src/auth/auth-validations";
+import { tokenSchema } from "@messanger/types";
 
 export class UserService {
     private static userRepository = prismaClient.user;

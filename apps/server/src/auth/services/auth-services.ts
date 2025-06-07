@@ -1,8 +1,8 @@
 import { prismaClient } from "@messanger/prisma";
 import { LoginRequest, LoginResponse, RegisterRequest, RegisterResponse } from "@messanger/types";
-import { loginSchema, registerSchema } from "../auth-validations";
+import { loginSchema, registerSchema } from "@messanger/types";
 import { HTTPException } from "hono/http-exception";
-import { UserPublic } from "@types/user/user";
+import { UserPublic } from "@messanger/types";
 import { Context } from "hono";
 
 

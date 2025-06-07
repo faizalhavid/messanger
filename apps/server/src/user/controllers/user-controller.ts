@@ -1,5 +1,5 @@
-import { BaseApiResponse } from "@types/api-response";
-import { UserPublic } from "@types/user/user";
+import { BaseApiResponse } from "@messanger/types";
+import { UserPublic } from "@messanger/types";
 import { Hono } from "hono";
 
 

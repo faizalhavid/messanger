@@ -1,7 +1,6 @@
-import { Env, Hono } from "hono";
-import { Schema } from "zod";
+import { Hono } from "hono";
 import { AuthService } from "../services/auth-services";
-import { BaseApiResponse } from "@types/api-response";
+import { BaseApiResponse } from "@messanger/types";
 
 export const authController = new Hono();
 

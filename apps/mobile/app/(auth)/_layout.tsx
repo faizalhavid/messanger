@@ -25,7 +25,7 @@ export default function AuthLayout() {
                         fontSize: 20,
                         fontWeight: "600",
                     },
-                    headerRight: () => <Button mode="text" onPress={() => route.replace('/auth/register')}>Register</Button>
+                    headerRight: () => <Button mode="text" onPress={() => route.replace('/(auth)/register')}>Register</Button>
                 }}
             />
             <Stack.Screen name="register" />

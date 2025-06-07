@@ -1,8 +1,8 @@
 import { HTTPException } from "hono/http-exception";
-import { profileSchema } from "../user-validation";
+import { ProfileSchema } from "@messanger/types";
 import { prismaClient } from "@messanger/prisma";
-import { UserPublic } from "@types/user/user";
-import { ProfilePublic, ProfileRequest } from "@types/user/profile";
+import { UserPublic } from "@messanger/types";
+import { ProfilePublic, ProfileRequest } from "@messanger/types";
 
 export class ProfileService {
     private static profileRepository = prismaClient.profile;
@@ -17,7 +17,7 @@ export class ProfileService {
         return ProfilePublic.fromProfile(profile);
     }
     static async updateProfile(user: UserPublic, req: ProfileRequest): Promise<ProfilePublic> {
-        const validatedProfileData = profileSchema.partial().parse(req);
+        const validatedProfileData = ProfileSchema.partial().parse(req);
 
         const updatedProfile = await this.profileRepository.update({
             where: { userId: user.id },

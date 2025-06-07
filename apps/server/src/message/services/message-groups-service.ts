@@ -1,8 +1,6 @@
 import { prismaClient } from "@messanger/prisma";
-import { messageGroupsBaseSchema, messageGroupsSchema, messageSchema } from "../message-validations";
 import { Message } from "@prisma/client";
-import { MessageGroupsPublic, MessageGroupsRequest } from "@types/messages/message-groups";
-import { MessageGroupsMessagesRequest, MessagePublic } from "@types/messages/message";
+import { MessageGroupsPublic, MessageGroupsRequest, MessagePublic, MessageGroupsMessagesRequest, messageGroupsSchema, messageGroupsBaseSchema, messageSchema } from "@messanger/types";
 
 
 

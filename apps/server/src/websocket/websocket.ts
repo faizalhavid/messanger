@@ -1,4 +1,4 @@
-import { UserPublic } from "@types/user/user";
+import { UserPublic } from "@messanger/types";
 import { WSContext } from "hono/ws";
 
 export enum WsEventName {

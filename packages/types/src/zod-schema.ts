@@ -1,4 +1,19 @@
-import { z, ZodType } from "zod";
+import z from "zod";
+
+
+export const BiodataSchema = z.object({
+    id: z.string().uuid(),
+    gender: z.string().min(2).max(100),
+    phone: z.string().min(10).max(15),
+    address: z.string().min(5).max(200),
+    birthDate: z.date()
+});
+
+
+export const ProfileSchema = z.object({
+    firstName: z.string().min(2).max(100),
+    lastName: z.string().min(2).max(100),
+});
 
 
 export const messageSchema = z.object({
@@ -50,3 +65,41 @@ export const messageGroupsSchema = messageGroupsBaseSchema
 export const groupMessageSchema = z.object({
     content: z.string().min(1, "Message content is required").max(500, "Message content must not exceed 500 characters")
 });
+
+
+
+export const registerSchema = z.object({
+    username: z.string().min(3).max(20).optional(),
+    password: z.string().min(6).max(50).regex(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,50}$/,
+        "Password must contain at least one uppercase letter, one lowercase letter, and one number"
+    ),
+    confirmPassword: z.string().min(6).max(50).regex(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,50}$/,
+        "Password must contain at least one uppercase letter, one lowercase letter, and one number"
+    ),
+    email: z.string().email().max(100).optional()
+})
+    .refine(
+        (data) => !!data.username || !!data.email,
+        { message: "Either username or email is required", path: ["username", "email"] }
+    )
+    .refine(
+        (data) => data.password === data.confirmPassword,
+        { message: "Passwords do not match", path: ["confirmPassword"] }
+    );
+
+export const loginSchema = z.object({
+    username: z.string().min(3).max(20).optional(),
+    password: z.string().min(6).max(50),
+    email: z.string().email().max(100).optional()
+}).refine(
+    (data) => !!data.username || !!data.email,
+    { message: "Either username or email is required", path: ["username", "email"] }
+);
+
+export const logoutSchema = z.object({
+    token: z.string().min(1, "Token is required")
+});
+
+export const tokenSchema = z.string().min(1, "Token is required");

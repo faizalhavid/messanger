@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { ProfileService } from "../services/profile-service";
-import { HonoContext } from "@types/hono-context";
-import { BaseApiResponse } from "@types/api-response";
+import { HonoContext } from "@messanger/types";
+import { BaseApiResponse } from "@messanger/types";
 
 
 export const profileController = new Hono<{ Variables: HonoContext }>();

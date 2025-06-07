@@ -4,12 +4,11 @@
     "dev": "bun run --hot src/index.ts"
   },
   "dependencies": {
-    "hono": "^4.7.11",
-    "zod": "^3.25.51",
-    "@messanger/types": "workspace:*",
     "@messanger/logging": "workspace:*",
     "@messanger/prisma": "workspace:*",
-    "@prisma/client": "^6.9.0"
+    "@messanger/types": "workspace:*",
+    "@prisma/client": "^6.9.0",
+    "hono": "^4.7.11"
   },
   "devDependencies": {
     "@types/bun": "latest"

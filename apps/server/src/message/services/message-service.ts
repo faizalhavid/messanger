@@ -1,7 +1,7 @@
 import { send } from "process";
-import { messageSchema } from "../message-validations";
 import { prismaClient } from "@messanger/prisma";
-import { MessagePublic, MessageRequest } from "@types/messages/message";
+import { MessageRequest, MessagePublic, messageSchema } from "@messanger/types";
+
 
 
 

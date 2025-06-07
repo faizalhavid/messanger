@@ -1,5 +1,6 @@
 import { Hono } from 'hono'
-import { HonoContext } from '@types/hono-context';
+import { cors } from 'hono/cors';
+import { HonoContext } from '@messanger/types';
 import { userController } from './user/controllers/user-controller'
 import { authController } from './auth/controllers/auth-controller';
 import { profileController } from './user/controllers/profile-controller';
@@ -9,7 +10,7 @@ import { groupMessagesController } from './message/controllers/group-messages-co
 import { errorHandler } from './handlers/error-handler';
 import { authMiddleware } from './middleware';
 import { websocket, webSocketConfig } from './websocket/config';
-import { cors } from '@hono/cors';
+
 
 const app = new Hono<{ Variables: HonoContext }>();
 
