@@ -11,4 +11,5 @@ export * from "./src/messages/group-messages";
 
 export * from "./src/api-response";
 export * from "./src/hono-context";
-export * from "./src/zod-schema";
+export * from "./src/zod/schema";
+export * from "./src/zod/utils";

@@ -59,13 +59,13 @@ function RootLayoutNav() {
   const pathName = usePathname();
   const colorScheme = useColorScheme();
   const { token, isLoading } = useAuthStore();
-  const navTheme = rnNavigationTheme[colorScheme ?? 'light'];
   const paperTheme = rnPaperTheme[colorScheme ?? 'light'];
+  const PUBLIC_ROUTES = ['/', '/login', '/register', '/forgot-password'];
 
 
   React.useEffect(() => {
     console.log('Pathname:', pathName);
-    if (!isLoading && !token && !pathName.startsWith('/(auth)')) {
+    if (!isLoading && !token && !PUBLIC_ROUTES.includes(pathName)) {
       route.replace('/(auth)/login');
     }
   }, [isLoading, token, pathName, route]);

@@ -12,22 +12,13 @@ export default function AuthLayout() {
                 gestureEnabled: false,
                 animation: "fade_from_bottom",
                 animationDuration: 300,
+                contentStyle: {
+                    height: 500,
+                },
             }}
             initialRouteName="login"
         >
-            <Stack.Screen name="login"
-                options={{
-                    statusBarHidden: true,
-                    title: "Connect to your account",
-                    headerShown: true,
-                    headerTitleAlign: "center",
-                    headerTitleStyle: {
-                        fontSize: 20,
-                        fontWeight: "600",
-                    },
-                    headerRight: () => <Button mode="text" onPress={() => route.replace('/(auth)/register')}>Register</Button>
-                }}
-            />
+            <Stack.Screen name="login" />
             <Stack.Screen name="register" />
             <Stack.Screen name="forgot-password" />
         </Stack>

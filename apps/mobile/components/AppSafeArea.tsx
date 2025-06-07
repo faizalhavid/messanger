@@ -15,6 +15,7 @@ type Props = {
     style?: object;
     errorMessage?: string;
     onDismissError?: () => void;
+    space?: number;
 };
 
 export default function AppSafeArea({
@@ -24,12 +25,13 @@ export default function AppSafeArea({
     flexDirection = 'column',
     alignItems = 'stretch',
     justifyContent = 'flex-start',
-    padding = 20,
+    padding = 25,
     onRefresh,
     refreshing = false,
     scrollable = false,
     style,
     errorMessage,
+    space = 10,
     onDismissError,
 }: Props) {
     const Container = scrollable ? ScrollView : View;
@@ -49,8 +51,20 @@ export default function AppSafeArea({
         }
     }, [errorMessage, onDismissError]);
 
+    const spacedChildren = space
+        ? React.Children.toArray(children).map((child, idx, arr) => (
+            <View key={idx} style={idx < arr.length - 1
+                ? (flexDirection === 'row'
+                    ? { marginRight: space }
+                    : { marginBottom: space })
+                : undefined}>
+                {child}
+            </View>
+        ))
+        : children;
+
     return (
-        <SafeAreaView style={[styles.safeArea, { padding }, style]}>
+        <SafeAreaView style={[styles.safeArea, { paddingHorizontal: padding, paddingVertical: padding * 1.5 }, style]}>
             {header}
             <Container
                 style={[
@@ -65,7 +79,7 @@ export default function AppSafeArea({
                     }
                     : {})}
             >
-                {children}
+                {spacedChildren}
             </Container>
             {loading && (
                 <View style={styles.loadingOverlay}>

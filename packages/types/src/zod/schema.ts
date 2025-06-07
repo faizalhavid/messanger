@@ -98,6 +98,15 @@ export const loginSchema = z.object({
     { message: "Either username or email is required", path: ["username", "email"] }
 );
 
+export const changePasswordSchema = z.object({
+    email: z.string().email().max(100)
+});
+
+export const validateChangePassword = z.object({
+    token: z.string().min(1, "Token is required"),
+    email: z.string().email().max(100)
+})
+
 export const logoutSchema = z.object({
     token: z.string().min(1, "Token is required")
 });
