@@ -1,4 +1,4 @@
-import { View } from '@/components/Themed';
+import { View } from 'react-native';
 import { Stack, useNavigation } from 'expo-router';
 import React from 'react'
 import { Button } from 'react-native-paper';

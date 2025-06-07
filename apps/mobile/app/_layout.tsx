@@ -5,12 +5,12 @@ import { Redirect, Stack, usePathname, useRouter } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { use, useEffect } from 'react';
 import 'react-native-reanimated';
-
-import { useColorScheme } from '@/components/useColorScheme';
 import React from 'react';
 import { useAuthStore } from '@/store/auth';
-import AuthProvider from '@/context/AuthProvider';
-import { Text } from 'react-native';
+import AuthProvider from '@/hooks/AuthProvider';
+import { Text, useColorScheme } from 'react-native';
+import { PaperProvider } from 'react-native-paper';
+import { rnNavigationTheme, rnPaperTheme } from '@/components/themes';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -59,11 +59,14 @@ function RootLayoutNav() {
   const pathName = usePathname();
   const colorScheme = useColorScheme();
   const { token, isLoading } = useAuthStore();
+  const navTheme = rnNavigationTheme[colorScheme ?? 'light'];
+  const paperTheme = rnPaperTheme[colorScheme ?? 'light'];
+
 
   React.useEffect(() => {
     console.log('Pathname:', pathName);
-    if (!isLoading && !token && !pathName.startsWith('/auth')) {
-      route.replace('/auth/login');
+    if (!isLoading && !token && !pathName.startsWith('/(auth)')) {
+      route.replace('/(auth)/login');
     }
   }, [isLoading, token, pathName, route]);
 
@@ -73,14 +76,15 @@ function RootLayoutNav() {
   return (
 
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <AuthProvider>
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-        </Stack>
-      </AuthProvider>
-
-
-    </ThemeProvider>
+      <PaperProvider theme={paperTheme}>
+        <AuthProvider>
+          <Stack>
+            <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+          </Stack>
+        </AuthProvider>
+      </PaperProvider>
+    </ThemeProvider >
   );
 }

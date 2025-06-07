@@ -17,6 +17,7 @@ export default function AuthLayout() {
         >
             <Stack.Screen name="login"
                 options={{
+                    statusBarHidden: true,
                     title: "Connect to your account",
                     headerShown: true,
                     headerTitleAlign: "center",
@@ -27,18 +28,7 @@ export default function AuthLayout() {
                     headerRight: () => <Button mode="text" onPress={() => route.replace('/auth/register')}>Register</Button>
                 }}
             />
-            <Stack.Screen name="register"
-                options={{
-                    title: "Create an account",
-                    headerShown: true,
-                    headerTitleAlign: "center",
-                    headerTitleStyle: {
-                        fontSize: 20,
-                        fontWeight: "600",
-                    },
-                    headerLeft: () => <Button mode="text" onPress={() => route.replace('/auth/verifications')}>Done</Button>
-                }}
-            />
+            <Stack.Screen name="register" />
             <Stack.Screen name="forgot-password" />
         </Stack>
     );

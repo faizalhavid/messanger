@@ -1,4 +1,4 @@
-import { useAuthStore } from "@/store/auth";
+import { useAuthStore } from "@/store/(auth)";
 import axios from "axios";
 
 const instance = axios.create({
@@ -22,8 +22,8 @@ instance.interceptors.response.use(
     (error) => {
         // Handle errors globally
         if (error.response && error.response.status === 401) {
-            // Optionally handle unauthorized access, e.g., redirect to login
-            console.error("Unauthorized access - redirecting to login");
+            // Optionally handle un(auth)orized access, e.g., redirect to login
+            console.error("Un(auth)orized access - redirecting to login");
         }
         return Promise.reject(error);
     }
