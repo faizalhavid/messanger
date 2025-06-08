@@ -17,6 +17,8 @@
     "@messanger/logging": "workspace:*",
     "@messanger/types": "workspace:*",
     "@react-native-async-storage/async-storage": "2.1.2",
+    "@react-native-vector-icons/evil-icons": "^12.0.0",
+    "@react-native-vector-icons/fontawesome6": "^12.0.0",
     "@react-navigation/native": "^7.1.6",
     "@tanstack/react-query": "^5.80.6",
     "axios": "^1.9.0",

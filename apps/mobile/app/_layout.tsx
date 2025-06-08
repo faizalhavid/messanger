@@ -60,7 +60,7 @@ function RootLayoutNav() {
   const colorScheme = useColorScheme();
   const { token, isLoading } = useAuthStore();
   const paperTheme = rnPaperTheme[colorScheme ?? 'light'];
-  const PUBLIC_ROUTES = ['/', '/login', '/register', '/forgot-password'];
+  const PUBLIC_ROUTES = ['/messages', '/login', '/register', '/forgot-password'];
 
 
   React.useEffect(() => {
@@ -78,7 +78,7 @@ function RootLayoutNav() {
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <PaperProvider theme={paperTheme}>
         <AuthProvider>
-          <Stack>
+          <Stack initialRouteName="(tabs)">
             <Stack.Screen name="(auth)" options={{ headerShown: false }} />
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="modal" options={{ presentation: 'modal' }} />

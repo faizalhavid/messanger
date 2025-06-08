@@ -2,7 +2,7 @@ import { BaseApiResponse, LoginRequest, LoginResponse, RegisterRequest, Register
 import axios from "./axios"; // Use your custom axios instance
 
 export const postLogin = async (req: LoginRequest): Promise<BaseApiResponse<LoginResponse>> => {
-    const response = await axios.post("/(auth)/login", req);
+    const response = await axios.post("/auth/login", req);
     console.log("Response from login:", response);
     if (response.status === 200) {
         return {
@@ -23,7 +23,7 @@ export const postRegister = async (
     req: RegisterRequest
 ): Promise<BaseApiResponse<RegisterResponse>> => {
     try {
-        const response = await axios.post("/(auth)/register", req);
+        const response = await axios.post("/auth/register", req);
         if (response.status === 200) {
             return {
                 success: true,

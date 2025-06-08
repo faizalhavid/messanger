@@ -4,6 +4,7 @@ import { Link, Tabs } from 'expo-router';
 import { Pressable, useColorScheme } from 'react-native';
 
 import { useClientOnlyValue } from '@/components/useClientOnlyValue';
+import { Icon } from 'react-native-paper';
 
 // You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
 function TabBarIcon(props: {
@@ -18,6 +19,7 @@ export default function TabLayout() {
 
   return (
     <Tabs
+      initialRouteName='messages'
       screenOptions={{
         // tabBarActiveTintColor: appTheme[colorScheme ?? 'light'].tint,
         // Disable the static render of the header on web
@@ -25,10 +27,10 @@ export default function TabLayout() {
         headerShown: useClientOnlyValue(false, true),
       }}>
       <Tabs.Screen
-        name="index"
+        name="messages"
         options={{
-          title: 'Tab One',
-          tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
+          title: 'Messages',
+          tabBarIcon: ({ color }) => <FontAwesome name="envelope" color={color} size={28} />,
           headerRight: () => (
             <Link href="/modal" asChild>
               <Pressable>
@@ -46,7 +48,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="two"
+        name="profile"
         options={{
           title: 'Tab Two',
           tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,

@@ -71,8 +71,15 @@ export class UserTest {
 }
 
 export class ProfileTest {
-    static async create(props: UserTestProps = usersTest[0]) {
-        const { username, profile } = props;
+    static async create(props: {
+        userId: string;
+        profile: {
+            firstName: string;
+            lastName: string;
+            avatar?: string;
+        }
+    }) {
+        const { userId, profile } = props;
         if (!profile) {
             throw new Error("Profile data is required to create a profile");
         }
@@ -83,7 +90,7 @@ export class ProfileTest {
                 lastName: lastName,
                 avatar: "https://example.com/avatar.jpg",
                 user: {
-                    connect: { username: username }
+                    connect: { id: userId }
                 }
             }
         })

@@ -6,7 +6,14 @@ import { logger } from '@/core/logging';
 describe('PATCH PROFILE', () => {
     beforeEach(async () => {
         await UserTest.create(usersTest[0]);
-        await ProfileTest.create(usersTest[0]);
+        await ProfileTest.create({
+            userId: usersTest[0].id,
+            profile: {
+                firstName: 'Test',
+                lastName: 'User',
+                avatar: 'https://example.com/avatar.jpg'
+            }
+        });
     })
 
 
@@ -86,7 +93,14 @@ describe('PATCH PROFILE', () => {
 describe('GET PROFILE', () => {
     beforeEach(async () => {
         await UserTest.create(usersTest[0]);
-        await ProfileTest.create(usersTest[0]);
+        await ProfileTest.create({
+            userId: usersTest[0].id,
+            profile: {
+                firstName: 'Test',
+                lastName: 'User',
+                avatar: 'https://example.com/avatar.jpg'
+            }
+        });
     })
 
     it('should return profile data', async () => {

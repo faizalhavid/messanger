@@ -13,6 +13,7 @@ const topic = "messages";
 
 messagesController.get("/", async (c) => {
     const user = c.get("authenticatedUser");
+    console.log("Fetching messages for user:", user);
     const messages = await MessageService.getMessages(user.id);
 
     const page = 1;

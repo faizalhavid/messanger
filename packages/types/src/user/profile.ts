@@ -1,4 +1,4 @@
-import type { User, Profile } from "@prisma/client";
+import type { User, Profile, Biodata } from "@prisma/client";
 import { BiodataPublic } from "./bio";
 import { UserPublic } from "./user";
 
@@ -8,15 +8,23 @@ export interface ProfileRequest {
     avatar?: string;
 }
 
-export interface ProfilePublic extends Omit<Profile, 'userId' | 'bioId'> {
+export interface ProfilePublic extends Omit<Profile, 'updatedAt' | 'userId' | 'bioId'> {
     user: Omit<UserPublic, 'createdAt' | 'updatedAt'>;
     bio?: Omit<BiodataPublic, 'createdAt' | 'updatedAt'>;
 }
 
 export namespace ProfilePublic {
-    export function fromProfile(profile: Profile & { user: User, bio?: BiodataPublic }): ProfilePublic {
+    export function fromProfile(profile: Profile & { user: User, bio?: Biodata }): ProfilePublic {
+        const {
+            userId,
+            bioId,
+            updatedAt,
+            // isDeleted,
+            // deletedAt
+            ...rest
+        } = profile;
         return {
-            ...profile,
+            ...rest,
             user: UserPublic.fromUser(profile.user),
             bio: profile.bio ? BiodataPublic.fromBiodata(profile.bio) : undefined
         };

@@ -13,16 +13,24 @@ import { websocket, webSocketConfig } from './websocket/config';
 
 
 const app = new Hono<{ Variables: HonoContext }>();
+app.use('*', cors({
+    origin: [
+        'http://localhost:8081', // untuk web/dev
+        'http://localhost:19006', // Metro bundler (Expo Go web)
+        'http://localhost:19000', // Expo Go devtools
+        'http://10.0.2.2:8081',   // Android emulator (akses ke host)
+        'http://10.0.2.2:19006',  // Expo Go di emulator
+        'http://10.0.3.2:8081',   // Genymotion emulator
+        'http://127.0.0.1:8081',  // kadang emulator pakai ini juga
+    ],
+    allowMethods: ['GET', 'POST', 'PUT', 'DELETE'],
+}));
 
 app.get('/ws', webSocketConfig);
 
 const api = new Hono<{ Variables: HonoContext }>();
 
 api.use(authMiddleware);
-app.use('*', cors({
-    origin: 'http://localhost:8081',
-    allowMethods: ['GET', 'POST', 'PUT', 'DELETE'],
-}));
 api.onError(errorHandler);
 api.get('', (c) => c.text('Hello Hono!'))
 api.route('/users', userController);

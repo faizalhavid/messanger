@@ -1,14 +1,29 @@
 import { describe, it, expect, beforeEach, afterEach } from "bun:test";
-import { MessageTest, usersTest, UserTest } from "./test-utils";
-import { PaginatedResponse } from "@/core/types/api-response";
-import { MessagePublic } from "@/message/types/message";
-import { WsEventName } from "@/core/types/websocket";
+import { MessageTest, ProfileTest, usersTest, UserTest } from "./test-utils";
+import { WsEventName } from "src/websocket/websocket";
+
 
 
 describe('GET Message', () => {
     beforeEach(async () => {
         await UserTest.create(usersTest[0]);
+        await ProfileTest.create({
+            userId: usersTest[0].id,
+            profile: {
+                firstName: 'Test',
+                lastName: 'User',
+                avatar: 'https://example.com/avatar.jpg'
+            }
+        });
         await UserTest.create(usersTest[1]);
+        await ProfileTest.create({
+            userId: usersTest[1].id,
+            profile: {
+                firstName: 'Receiver',
+                lastName: 'User',
+                avatar: 'https://example.com/avatar.jpg'
+            }
+        });
         await MessageTest.create({
             id: '1',
             content: 'Hello, this is a test message!',

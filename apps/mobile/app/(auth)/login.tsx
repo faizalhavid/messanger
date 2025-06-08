@@ -194,6 +194,16 @@ export default function AuthIndex() {
             >
                 Login
             </Button>
+            {/* Todo: Remove This  */}
+            <Button
+                mode="outlined"
+                onPress={() => {
+                    router.push('/(tabs)/messages');
+                }}
+                style={{ marginTop: 16 }}
+            >
+                Skip
+            </Button>
         </AppSafeArea>
     );
 }
