@@ -28,8 +28,7 @@ instance.interceptors.response.use(
         if (error.config && error.config.url) {
             console.log("Path:", error.config);
             console.log("Errors:", error);
-            console.log("response : ", error._response)
-
+            console.log("response : ", error.response);
         }
         return Promise.reject(error);
     }

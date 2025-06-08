@@ -41,11 +41,12 @@ export default function StackWrapper(props: Props) {
     return (
         <View
             style={{
+                ...style,
+
                 flexDirection,
                 alignItems,
                 justifyContent,
                 flexWrap: wrap ? 'wrap' : 'nowrap',
-                ...style,
             }}
         >
             {spacedChildren}

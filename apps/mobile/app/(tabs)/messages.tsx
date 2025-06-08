@@ -2,9 +2,11 @@ import { StyleSheet, View } from 'react-native';
 import React, { useEffect } from 'react';
 import { MessagePublic } from '@messanger/types';
 import { getMessages } from '@/services/message';
-import { Text } from 'react-native-paper';
+import { Divider, Text } from 'react-native-paper';
 import AppSafeArea from '@/components/AppSafeArea';
 import BubbleChat from '@/components/chat/bubble';
+import ConversationListItem from '@/components/chat/conversation-list-item';
+import { useRouter } from 'expo-router';
 
 /* 
 
@@ -40,20 +42,34 @@ const defaultMessages: MessagePublic[] = [
     content: 'Welcome to the messaging app!',
     createdAt: new Date(),
     sender: {
-      id: 'system',
-      username: 'System Bot',
-      profil: {
-        avatar: 'https://example.com/avatar.png',
-        fullName: 'System Bot'
+      id: '1',
+      createdAt: new Date(),
+      firstName: 'John',
+      lastName: 'Doe',
+      avatar: null,
+      user: {
+        id: '1',
+        username: 'JohnDoe',
+        deletedAt: null,
+        isDeleted: false,
+        email: 'johndoe@example.com',
+        isActive: true
       }
     },
     isDeletedBySender: false,
     receiver: {
-      id: 'user1',
-      username: 'User One',
-      profil: {
-        avatar: 'https://example.com/user1-avatar.png',
-        fullName: 'User One'
+      id: '2',
+      createdAt: new Date(),
+      firstName: 'John',
+      lastName: 'Doe',
+      avatar: null,
+      user: {
+        id: '2',
+        username: 'JaneDoe',
+        deletedAt: null,
+        isDeleted: false,
+        email: 'janedoe@example.com',
+        isActive: true
       }
     },
     isDeletedByReceiver: false
@@ -61,7 +77,7 @@ const defaultMessages: MessagePublic[] = [
 ];
 
 export default function TabOneScreen() {
-
+  const router = useRouter();
   const pageState = React.useState({
     isLoading: false,
     showPassword: false,
@@ -100,7 +116,17 @@ export default function TabOneScreen() {
     <AppSafeArea loading={pageState[0].isLoading} errorMessage='Failed to load messages' onDismissError={() => pageState[1]({ ...pageState[0], generalError: '', messages: defaultMessages })}>
       {
         pageState[0].messages.map((msg) => (
-          <BubbleChat key={msg.id} message={msg.content} isSent={true} sender={msg.sender} />
+          <>
+            <ConversationListItem
+              key={msg.id}
+              sender={msg.sender}
+              onPress={() => router.push({ pathname: "/(tabs)/[messageid]", params: { messageid: msg.id } })}
+              message={msg.content}
+              createdAt={new Date(msg.createdAt)}
+            // You can add more props as needed
+            />
+            <Divider style={{ marginVertical: 12 }} />
+          </>
         ))
       }
     </AppSafeArea>
