@@ -1,5 +1,5 @@
 import { beforeEach, describe, it, afterEach, expect } from "bun:test";
-import { MessageGroupsMessagesTest, MessageGroupsTest, MessageTest, usersTest, UserTest } from "./test-utils";
+import { ConversationGroupsMessagesTest, ConversationGroupsTest, ConversationTest, usersTest, UserTest } from "./test-utils";
 import { use } from "hono/jsx";
 
 
@@ -7,7 +7,7 @@ describe('POST Message Group', () => {
     beforeEach(async () => {
         await UserTest.create(usersTest[0]);
         await UserTest.create(usersTest[1]);
-        await MessageGroupsTest.create({
+        await ConversationGroupsTest.create({
             id: '1',
             name: 'Test Group',
             ownerId: usersTest[0].id,
@@ -15,15 +15,15 @@ describe('POST Message Group', () => {
         });
     });
 
-    it('should send a group message', async () => {
-        const response = await fetch('http://localhost:3000/api/group-messages/1', {
+    it('should send a group conversation', async () => {
+        const response = await fetch('http://localhost:3000/api/conversation-groups-messages/1', {
             method: 'POST',
             headers: { 'Authorization': usersTest[0].token, 'Content-Type': 'application/json' },
             body: JSON.stringify({ content: 'Hello Group!' })
         });
-        console.log('Send group message response status:', response.status);
+        console.log('Send group conversation response status:', response.status);
         const body = await response.json();
-        console.log('Send group message response:', body);
+        console.log('Send group conversation response:', body);
         expect(response.status).toBe(200);
         expect(body.success).toBe(true);
         expect(body.data).toBeDefined();
@@ -32,27 +32,27 @@ describe('POST Message Group', () => {
     afterEach(async () => {
         await UserTest.delete(usersTest[0].username);
         await UserTest.delete(usersTest[1].username);
-        await MessageGroupsTest.clearAllGroups();
+        await ConversationGroupsTest.clearAllGroups();
     });
 })
 
-describe('GET Group Messages', () => {
+describe('GET Group Conversations', () => {
     beforeEach(async () => {
         await UserTest.create(usersTest[0]);
         await UserTest.create(usersTest[1]);
-        await MessageGroupsTest.create({
+        await ConversationGroupsTest.create({
             id: '1',
             name: 'Test Group',
             ownerId: usersTest[0].id,
             memberIds: [usersTest[0].id, usersTest[1].id],
         });
-        await MessageTest.create({
+        await ConversationTest.create({
             id: '1',
             content: 'Hello Group!',
             senderId: usersTest[0].id,
             receiverId: usersTest[1].id
         });
-        await MessageGroupsMessagesTest.create({
+        await ConversationGroupsMessagesTest.create({
             id: '1',
             groupId: '1',
             messageId: '1',
@@ -61,27 +61,27 @@ describe('GET Group Messages', () => {
 
     });
 
-    it('should get group messages', async () => {
-        const response = await fetch('http://localhost:3000/api/group-messages/1', {
+    it('should get group conversations', async () => {
+        const response = await fetch('http://localhost:3000/api/conversation-groups-messages/1', {
             method: 'GET',
             headers: { 'Authorization': usersTest[0].token }
         });
-        console.log('Get group messages response status:', response.status);
+        console.log('Get group conversations response status:', response.status);
         const body = await response.json();
-        console.log('Get group messages response:', body);
+        console.log('Get group conversations response:', body);
         expect(response.status).toBe(200);
         expect(body.success).toBe(true);
         expect(body.data).toBeDefined();
     });
 
-    // it('should get group messages detail', async () => {
-    //     const response = await fetch('http://localhost:3000/api/group-messages/1/messages/1', {
+    // it('should get group conversations detail', async () => {
+    //     const response = await fetch('http://localhost:3000/api/group-conversations/1/messages/1', {
     //         method: 'GET',
     //         headers: { 'Authorization': usersTest[0].token }
     //     });
-    //     console.log('Get group messages detail response status:', response.status);
+    //     console.log('Get group conversations detail response status:', response.status);
     //     const body = await response.json();
-    //     console.log('Get group messages detail response:', body);
+    //     console.log('Get group conversations detail response:', body);
     //     expect(response.status).toBe(200);
     //     expect(body.success).toBe(true);
     //     expect(body.data).toBeDefined();
@@ -91,27 +91,27 @@ describe('GET Group Messages', () => {
     afterEach(async () => {
         await UserTest.delete(usersTest[0].username);
         await UserTest.delete(usersTest[1].username);
-        await MessageGroupsTest.clearAllGroups();
+        await ConversationGroupsTest.clearAllGroups();
     });
 });
 
-describe('DELETE Group Message', () => {
+describe('DELETE Group Conversation', () => {
     beforeEach(async () => {
         await UserTest.create(usersTest[0]);
         await UserTest.create(usersTest[1]);
-        await MessageGroupsTest.create({
+        await ConversationGroupsTest.create({
             id: '1',
             name: 'Test Group',
             ownerId: usersTest[0].id,
             memberIds: [usersTest[0].id, usersTest[1].id],
         });
-        await MessageTest.create({
+        await ConversationTest.create({
             id: '1',
             content: 'Hello Group!',
             senderId: usersTest[0].id,
             receiverId: usersTest[1].id
         });
-        await MessageGroupsMessagesTest.create({
+        await ConversationGroupsMessagesTest.create({
             id: '1',
             groupId: '1',
             messageId: '1',
@@ -119,19 +119,19 @@ describe('DELETE Group Message', () => {
         });
     });
 
-    it('should delete a group message', async () => {
-        const response = await fetch('http://localhost:3000/api/group-messages/1/messages/1', {
+    it('should delete a group conversation', async () => {
+        const response = await fetch('http://localhost:3000/api/conversation-groups-messages/1/messages/1', {
             method: 'DELETE',
             headers: { 'Authorization': usersTest[0].token }
         });
-        console.log('Delete group message response status:', response.status);
+        console.log('Delete group conversation response status:', response.status);
         const body = await response.json();
-        console.log('Delete group message response:', body);
+        console.log('Delete group conversation response:', body);
         expect(response.status).toBe(200);
         expect(body.success).toBe(true);
 
         // Verify the message is deleted
-        const groupResponse = await fetch('http://localhost:3000/api/group-messages/1', {
+        const groupResponse = await fetch('http://localhost:3000/api/conversation-groups-messages/1/messages/1', {
             method: 'GET',
             headers: { 'Authorization': usersTest[0].token }
         });
@@ -144,8 +144,8 @@ describe('DELETE Group Message', () => {
 
     });
 
-    it('should delete messages in a group by owner', async () => {
-        const response = await fetch('http://localhost:3000/api/group-messages/1/messages/1/by-owner', {
+    it('should delete conversation in a group by owner', async () => {
+        const response = await fetch('http://localhost:3000/api/conversation-groups-messages/1/messages/1/by-owner', {
             method: 'DELETE',
             headers: { 'Authorization': usersTest[0].token }
         });
@@ -155,7 +155,7 @@ describe('DELETE Group Message', () => {
         expect(response.status).toBe(200);
         expect(body.success).toBe(true);
         // Verify the message is deleted
-        const groupResponse = await fetch('http://localhost:3000/api/group-messages/1', {
+        const groupResponse = await fetch('http://localhost:3000/api/conversation-groups-messages/1/messages/1', {
             method: 'GET',
             headers: { 'Authorization': usersTest[0].token }
         });
@@ -170,7 +170,7 @@ describe('DELETE Group Message', () => {
     afterEach(async () => {
         await UserTest.delete(usersTest[0].username);
         await UserTest.delete(usersTest[1].username);
-        await MessageGroupsTest.clearAllGroups();
-        await MessageGroupsMessagesTest.clearAllMessages("1");
+        await ConversationGroupsTest.clearAllGroups();
+        await ConversationGroupsMessagesTest.clearAllMessages("1");
     });
 });

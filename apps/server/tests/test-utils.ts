@@ -108,7 +108,7 @@ export class ProfileTest {
 
 }
 
-export class MessageTest {
+export class ConversationTest {
     static async create(props: {
         id: string;
         content: string;
@@ -116,7 +116,7 @@ export class MessageTest {
         receiverId: string;
     }) {
         const { id, content, senderId, receiverId } = props;
-        await prismaClient.message.create({
+        await prismaClient.conversation.create({
             data: {
                 id: id,
                 content: content,
@@ -125,8 +125,8 @@ export class MessageTest {
             }
         });
     }
-    static async clearAllMessages(userId: string) {
-        await prismaClient.message.deleteMany({
+    static async clearAllConversations(userId: string) {
+        await prismaClient.conversation.deleteMany({
             where: {
                 OR: [
                     { senderId: userId },
@@ -137,7 +137,7 @@ export class MessageTest {
     }
 }
 
-export class MessageGroupsTest {
+export class ConversationGroupsTest {
     static async create(props: {
         id: string;
         name: string;
@@ -146,7 +146,7 @@ export class MessageGroupsTest {
     }) {
         const { id, name, ownerId, memberIds: members } = props;
         try {
-            await prismaClient.messageGroups.create({
+            await prismaClient.conversationGroup.create({
                 data: {
                     id: id,
                     name: name,
@@ -165,11 +165,11 @@ export class MessageGroupsTest {
     }
 
     static async clearAllGroups() {
-        await prismaClient.messageGroups.deleteMany({});
+        await prismaClient.conversationGroup.deleteMany({});
     }
 }
 
-export class MessageGroupsMessagesTest {
+export class ConversationGroupsMessagesTest {
     static async create(props: {
         id: string;
         messageId: string;
@@ -177,19 +177,19 @@ export class MessageGroupsMessagesTest {
         groupId: string;
     }) {
         const { id, messageId, senderId, groupId } = props;
-        await prismaClient.messageGroupMessages.create({
+        await prismaClient.conversationGroupMessages.create({
             data: {
                 id: id,
-                messageId: messageId,
-                messageGroupId: groupId
+                conversationId: messageId,
+                groupId: groupId
             }
         });
     }
 
     static async clearAllMessages(groupId: string) {
-        await prismaClient.messageGroupMessages.deleteMany({
+        await prismaClient.conversationGroupMessages.deleteMany({
             where: {
-                messageGroupId: groupId
+                groupId: groupId
             }
         });
     }

@@ -1,0 +1,29 @@
+{
+    "success": true,
+    "message": "Conversations fetched successfully",
+    "status": 200,
+    "data": [
+        {
+            "id": "1",
+            "content": "Welcome to the messaging app!",
+            "createdAt": "2023-10-01T12:00:00Z",
+            "sender": {
+                "id": "system",
+                "username": "System Bot",
+                "profil": {
+                    "avatar": "https://example.com/avatar.png",
+                    "fullName": "System Bot"
+                }
+            },
+            "receiver": {
+                "id": "2",
+                "username": "User1",
+                "profil": {
+                    "avatar": "https://example.com/user1-avatar.png",
+                    "fullName": "User One"
+                }
+            },
+            "isDeletedBySender": false
+        }
+    ]
+}

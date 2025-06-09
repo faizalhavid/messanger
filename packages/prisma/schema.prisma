@@ -39,10 +39,10 @@ model User {
   lastLogin DateTime? @default(now())
   isActive  Boolean   @default(true)
 
-  sentMessages     Message[]             @relation("SentMessages")
-  receivedMessages Message[]             @relation("ReceivedMessages")
-  messageGroups    MessageGroups[]
-  messageGroupMembers  MessageGroupMembers[]
+  SentConversations     Conversation[]             @relation("SentConversations")
+  ReceivedConversations Conversation[]             @relation("ReceivedConversations")
+  messageGroups         ConversationGroup[]
+  messageGroupMembers   ConversationGroupMembers[]
 
   @@index([username], name: "idx_user_username")
   @@index([email], name: "idx_user_email")
@@ -82,79 +82,80 @@ model Biodata {
   @@map("biodata")
 }
 
-model Message {
+model Conversation {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
   senderId            String  @map("sender_id")
   isDeletedBySender   Boolean @default(false) @map("is_deleted_by_sender")
+  sender              User    @relation("SentConversations", fields: [senderId], references: [id], onDelete: Cascade)
   receiverId          String  @map("receiver_id")
+  receiver            User    @relation("ReceivedConversations", fields: [receiverId], references: [id], onDelete: Cascade)
   isDeletedByReceiver Boolean @default(false) @map("is_deleted_by_receiver")
 
   content String @db.Text
 
-  sender    User                   @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
-  receiver  User                   @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
-  messageGroupMessages MessageGroupMessages[]
+  messageGroupMessages ConversationGroupMessages[]
 
-  @@index([senderId], name: "idx_message_sender_id")
-  @@index([receiverId], name: "idx_message_receiver_id")
-  @@map("messages")
+  @@index([senderId], name: "idx_conversation_sender_id")
+  @@index([receiverId], name: "idx_conversation_receiver_id")
+  @@map("conversations")
 }
 
-model MessageGroups {
-  id        String   @id @default(cuid())
-  name      String?  @unique @db.VarChar(255)
+model ConversationGroup {
+  id          String  @id @default(cuid())
+  name        String? @unique @db.VarChar(255)
   description String? @db.Text
-  avatar    String?  @db.VarChar(255) 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  avatar      String? @db.VarChar(255)
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
   deletedAt DateTime? @map("deleted_at")
-  isDeleted Boolean  @default(false) @map("is_deleted")
-  isPublic  Boolean  @default(false) @map("is_public")
+  isDeleted Boolean   @default(false) @map("is_deleted")
+  isPublic  Boolean   @default(false) @map("is_public")
 
-  ownerId  String                 @map("owner_id")
-  owner    User                   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  messages MessageGroupMessages[]
-  members  MessageGroupMembers[]
+  ownerId       String                      @map("owner_id")
+  owner         User                        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  conversations ConversationGroupMessages[]
+  members       ConversationGroupMembers[]
 
-  @@unique([name, ownerId], name: "unique_message_group_name_owner")
-  @@index([ownerId], name: "idx_message_group_owner_id")
-  @@index([name], name: "idx_message_group_name")
-  @@map("message_groups")
+  @@unique([name, ownerId], name: "unique_conversation_group_name_owner")
+  @@index([ownerId], name: "idx_conversation_group_owner_id")
+  @@index([name], name: "idx_conversation_group_name")
+  @@map("conversation_groups")
 }
 
-model MessageGroupMembers {
+model ConversationGroupMembers {
   id        String    @id @default(cuid())
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
   deletedAt DateTime? @map("deleted_at")
   isDeleted Boolean   @default(false) @map("is_deleted")
 
-  userId         String @map("user_id")
-  messageGroupId String @map("message_group_id")
+  userId  String @map("user_id")
+  groupId String @map("conversation_group_id")
 
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  messageGroup MessageGroups @relation(fields: [messageGroupId], references: [id], onDelete: Cascade)
+  user  User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group ConversationGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, messageGroupId], name: "unique_user_message_group")
-  @@map("message_group_members")
+  @@unique([userId, groupId], name: "unique_user_message_group")
+  @@map("conversation_group_members")
 }
 
-model MessageGroupMessages {
+model ConversationGroupMessages {
   id               String    @id @default(cuid())
   createdAt        DateTime  @default(now()) @map("created_at")
   updatedAt        DateTime  @updatedAt @map("updated_at")
   deletedByOwner   DateTime? @map("deleted_by_owner")
   isDeletedByOwner Boolean   @default(false) @map("is_deleted_by_owner")
 
-  messageGroupId String @map("message_group_id")
-  messageId      String @map("message_id")
+  groupId        String @map("conversation_group_id")
+  conversationId String @map("conversation_id")
 
-  messageGroup MessageGroups @relation(fields: [messageGroupId], references: [id], onDelete: Cascade)
-  message      Message       @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  group        ConversationGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  conversation Conversation      @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
-  @@unique([messageGroupId, messageId], name: "unique_message_group_message")
-  @@map("message_group_messages")
+  @@unique([groupId, conversationId], name: "unique_group_conversation")
+  @@map("conversation_group_messages")
 }

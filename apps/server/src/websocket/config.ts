@@ -5,10 +5,10 @@ import { UserService } from 'src/user/services/user-service';
 import { WsTopic, AppWSContext, WsBroadcastEvent, WsEventName } from './websocket';
 
 export const { upgradeWebSocket, websocket } = createBunWebSocket();
-const ALLOWED_TOPICS = [WsTopic.Messages, WsTopic.Notifications];
+const ALLOWED_TOPICS = [WsTopic.Conversations, WsTopic.Notifications];
 
 export const webSocketConfig = upgradeWebSocket(async (c: Context) => {
-    const topic = (c.req.query('topic') || 'messages') as WsTopic; // example url: /ws?topic=messages, /ws?topic=notifications
+    const topic = (c.req.query('topic') || 'conversation') as WsTopic; // example url: /ws?topic=conversation, /ws?topic=notifications
     if (!ALLOWED_TOPICS.includes(topic)) {
         return rejectConnection(4000, `Invalid topic: ${topic}. Allowed topics are: ${ALLOWED_TOPICS.join(', ')}`);
     }
@@ -87,9 +87,9 @@ function handlePayloadEvent(payload: WsBroadcastEvent, data: AppWSContext["data"
             console.log('User status change:', payload.data);
             break;
 
-        case WsEventName.MessageRead:
+        case WsEventName.ConversationRead:
             // Handle message read event
-            console.log('Message read:', payload.data);
+            console.log('Conversation read:', payload.data);
             break;
 
         default:

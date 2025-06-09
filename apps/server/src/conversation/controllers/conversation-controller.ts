@@ -1,27 +1,27 @@
-import { HonoContext } from "@types/hono-context";
+import { HonoContext } from "@messanger/types";
 import { Hono } from "hono";
-import { MessageService } from "../services/message-service";
-import { BaseApiResponse, PaginatedResponse } from "@types/api-response";
-import { MessagePublic } from "@messanger/types";
+import { ConversationService } from "../services/conversation-service";
+import { BaseApiResponse, PaginatedResponse } from "@messanger/types";
+import { ConversationPublic } from "@messanger/types";
 import { WsBroadcastEvent, WsEventName } from "src/websocket/websocket";
 import { server } from "src";
 import { randomUUID } from "crypto";
 
-export const messagesController = new Hono<{ Variables: HonoContext }>();
-const topic = "messages";
+export const conversationController = new Hono<{ Variables: HonoContext }>();
+const topic = "conversation";
 
 
-messagesController.get("/", async (c) => {
+conversationController.get("/", async (c) => {
     const user = c.get("authenticatedUser");
     console.log("Fetching messages for user:", user);
-    const messages = await MessageService.getMessages(user.id);
+    const messages = await ConversationService.getMessages(user.id);
 
     const page = 1;
     const pageSize = messages.length;
     const totalItems = messages.length;
     const totalPages = 1;
 
-    const paginationResponse: PaginatedResponse<MessagePublic> = {
+    const paginationResponse: PaginatedResponse<ConversationPublic> = {
         success: true,
         message: "Messages retrieved successfully",
         data: {
@@ -39,10 +39,10 @@ messagesController.get("/", async (c) => {
     return c.json(paginationResponse);
 });
 
-messagesController.get("/:id", async (c) => {
+conversationController.get("/:id", async (c) => {
     const user = c.get("authenticatedUser");
     const messageId = c.req.param("id");
-    const message = await MessageService.getMessageById(messageId, user.id);
+    const message = await ConversationService.getMessageById(messageId, user.id);
 
     const response: BaseApiResponse = {
         success: true,
@@ -52,13 +52,13 @@ messagesController.get("/:id", async (c) => {
     return c.json(response);
 });
 
-messagesController.post("/", async (c) => {
+conversationController.post("/", async (c) => {
     const user = c.get("authenticatedUser");
 
     const request = await c.req.json();
-    const result = await MessageService.sendMessage(request, user.id);
+    const result = await ConversationService.sendMessage(request, user.id);
 
-    const broadcastPayload = generateWSBroadcastPayload<MessagePublic>(result, WsEventName.MessageCreated);
+    const broadcastPayload = generateWSBroadcastPayload<ConversationPublic>(result, WsEventName.ConversationCreated);
 
     const response: BaseApiResponse = {
         success: true,
@@ -69,14 +69,14 @@ messagesController.post("/", async (c) => {
     return c.json(response);
 });
 
-messagesController.delete("/:id", async (c) => {
+conversationController.delete("/:id", async (c) => {
     const user = c.get("authenticatedUser");
     const messageId = c.req.param("id");
     const broadcastPayload = generateWSBroadcastPayload<{ messageId: string; userId: string }>(
         { messageId, userId: user.id },
-        WsEventName.MessageDeleted
+        WsEventName.ConversationDeleted
     );
-    await MessageService.deleteMessage(messageId, user.id);
+    await ConversationService.deleteMessage(messageId, user.id);
 
     server.publish(topic, JSON.stringify(broadcastPayload));
 

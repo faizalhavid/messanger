@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach } from "bun:test";
-import { MessageTest, ProfileTest, usersTest, UserTest } from "./test-utils";
+import { ConversationTest, ProfileTest, usersTest, UserTest } from "./test-utils";
 import { WsEventName } from "src/websocket/websocket";
 
 
 
-describe('GET Message', () => {
+describe('GET Conversation', () => {
     beforeEach(async () => {
         await UserTest.create(usersTest[0]);
         await ProfileTest.create({
@@ -24,7 +24,7 @@ describe('GET Message', () => {
                 avatar: 'https://example.com/avatar.jpg'
             }
         });
-        await MessageTest.create({
+        await ConversationTest.create({
             id: '1',
             content: 'Hello, this is a test message!',
             senderId: usersTest[0].id,
@@ -32,14 +32,14 @@ describe('GET Message', () => {
         });
 
     })
-    it('should show all user messages', async () => {
-        const response = await fetch('http://localhost:3000/api/messages', {
+    it('should show all user conversations', async () => {
+        const response = await fetch('http://localhost:3000/api/conversations', {
             method: 'GET',
             headers: { 'Authorization': usersTest[0].token }
         });
-        console.log('Get messages response status:', response);
+        console.log('Get conversations response status:', response);
         const body = await response.json();
-        console.log('Get messages response:', body);
+        console.log('Get conversations response:', body);
 
         expect(response.status).toBe(200);
         expect(body.success).toBe(true);
@@ -47,14 +47,14 @@ describe('GET Message', () => {
         //expect(Array.isArray(body.data)).toBe(true);
     });
 
-    it('should show a specific message by ID', async () => {
-        const response = await fetch('http://localhost:3000/api/messages/1', {
+    it('should show a specific conversation by ID', async () => {
+        const response = await fetch('http://localhost:3000/api/conversations/1', {
             method: 'GET',
             headers: { 'Authorization': usersTest[0].token }
         });
-        console.log('Get message by ID response status:', response);
+        console.log('Get conversation by ID response status:', response);
         const body = await response.json();
-        console.log('Get message by ID response:', body);
+        console.log('Get conversation by ID response:', body);
 
         expect(response.status).toBe(200);
         expect(body.success).toBe(true);
@@ -66,16 +66,16 @@ describe('GET Message', () => {
     });
 });
 
-describe('POST Message', () => {
+describe('POST Conversation', () => {
     beforeEach(async () => {
         await UserTest.create(usersTest[0]);
         await UserTest.create(usersTest[1]);
 
-        await MessageTest.clearAllMessages(usersTest[0].id);
-        await MessageTest.clearAllMessages(usersTest[1].id);
+        await ConversationTest.clearAllConversations(usersTest[0].id);
+        await ConversationTest.clearAllConversations(usersTest[1].id);
     })
-    it('should create a new message', async () => {
-        const response = await fetch('http://localhost:3000/api/messages', {
+    it('should create a new conversation', async () => {
+        const response = await fetch('http://localhost:3000/api/conversations', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -86,9 +86,9 @@ describe('POST Message', () => {
                 receiverId: usersTest[1].id
             })
         });
-        console.log('Post message response status:', response);
+        console.log('Post conversation response status:', response);
         const body = await response.json();
-        console.log('Post message response:', body);
+        console.log('Post conversation response:', body);
 
         expect(response.status).toBe(200);
         //expect(body.success).toBe(true);
@@ -100,16 +100,16 @@ describe('POST Message', () => {
         await UserTest.delete(usersTest[0].username);
         await UserTest.delete(usersTest[1].username);
 
-        await MessageTest.clearAllMessages(usersTest[0].id);
-        await MessageTest.clearAllMessages(usersTest[1].id);
+        await ConversationTest.clearAllConversations(usersTest[0].id);
+        await ConversationTest.clearAllConversations(usersTest[1].id);
     });
 });
 
-describe('DELETE Message', () => {
+describe('DELETE Conversation', () => {
     beforeEach(async () => {
         await UserTest.create(usersTest[0]);
         await UserTest.create(usersTest[1]);
-        await MessageTest.create({
+        await ConversationTest.create({
             id: '1',
             content: 'Hello, this is a test message!',
             senderId: usersTest[0].id,
@@ -117,19 +117,19 @@ describe('DELETE Message', () => {
         });
     });
 
-    it('receiver should get messageDeleted event and update state', async () => {
-        // 1. Receiver buka ws, get all messages, simpan messageId
-        const wsReceiver = new WebSocket('ws://localhost:3000/ws?topic=messages');
+    it('receiver should get conversationDeleted event and update state', async () => {
+        // 1. Receiver buka ws, get all conversations, simpan conversationId
+        const wsReceiver = new WebSocket('ws://localhost:3000/ws?topic=conversations');
         const authReceiver = { event: WsEventName.Authentication, data: { token: usersTest[1].token } };
 
         await new Promise<void>((resolve, reject) => {
             let timeout = setTimeout(() => {
                 wsReceiver.close();
-                reject(new Error('Timeout: receiver did not get messageDeleted event'));
+                reject(new Error('Timeout: receiver did not get conversationDeleted event'));
             }, 3000);
 
-            let messageId: string | undefined;
-            let deletedMessageId: string | undefined;
+            let conversationId: string | undefined;
+            let deletedConversationId: string | undefined;
 
             wsReceiver.onopen = () => {
                 wsReceiver.send(JSON.stringify(authReceiver));
@@ -137,28 +137,28 @@ describe('DELETE Message', () => {
             wsReceiver.onmessage = async (event) => {
                 const data = JSON.parse(event.data);
                 if (data.event === 'auth-success') {
-                    // Receiver fetch all messages
-                    const getResponse = await fetch('http://localhost:3000/api/messages', {
+                    // Receiver fetch all conversations
+                    const getResponse = await fetch('http://localhost:3000/api/conversations', {
                         method: 'GET',
                         headers: { 'Authorization': usersTest[1].token }
                     });
                     const getBody = await getResponse.json();
                     expect(getResponse.status).toBe(200);
                     expect(getBody.data).toBeDefined();
-                    console.log('Receiver messages:', getBody.data);
-                    messageId = getBody.data.items[0].id;
-                    expect(messageId).toBeDefined();
+                    console.log('Receiver conversations:', getBody.data);
+                    conversationId = getBody.data.items[0].id;
+                    expect(conversationId).toBeDefined();
 
-                    // 2. Setelah receiver siap, sender buka ws dan hapus pesan
-                    const wsSender = new WebSocket('ws://localhost:3000/ws?topic=messages');
+                    // 2. Setelah receiver siap, sender buka ws dan hapus percakapan
+                    const wsSender = new WebSocket(`ws://localhost:3000/ws?topic=conversations:${conversationId}`);
                     const authSender = { event: 'authentication', data: { token: usersTest[0].token } };
                     wsSender.onopen = () => {
                         wsSender.send(JSON.stringify(authSender));
                     };
                     wsSender.onmessage = async (event) => {
                         const senderData = JSON.parse(event.data);
-                        if (senderData.event === 'auth-success' && messageId) {
-                            const delResponse = await fetch(`http://localhost:3000/api/messages/${messageId}`, {
+                        if (senderData.event === 'auth-success' && conversationId) {
+                            const delResponse = await fetch(`http://localhost:3000/api/conversations/${conversationId}`, {
                                 method: 'DELETE',
                                 headers: { 'Authorization': usersTest[0].token }
                             });
@@ -166,11 +166,11 @@ describe('DELETE Message', () => {
                             wsSender.close();
                         }
                     };
-                } else if (data.event === 'message-deleted') {
-                    console.log('Receiver got messageDeleted event:', data);
-                    deletedMessageId = data.data.messageId;
-                    console.log('Receiver got messageDeleted for:', deletedMessageId);
-                    expect(deletedMessageId).toBeDefined();
+                } else if (data.event === 'conversation-deleted') {
+                    console.log('Receiver got conversationDeleted event:', data);
+                    deletedConversationId = data.data.conversationId;
+                    console.log('Receiver got conversationDeleted for:', deletedConversationId);
+                    expect(deletedConversationId).toBeDefined();
                     // Receiver bisa update state lokal di sini
                     clearTimeout(timeout);
                     wsReceiver.close();

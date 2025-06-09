@@ -8,34 +8,7 @@ import BubbleChat from '@/components/chat/bubble';
 import ConversationListItem from '@/components/chat/conversation-list-item';
 import { useRouter } from 'expo-router';
 
-/* 
 
-UserProfilePulic type
-export type UserPublic = {
-  id: string;
-  username: string;
-  profil:{
-    avatar: string;
-    fullName: string; // first and last name
-  }
-}
-{
-  "id": "1",
-  "content": "Welcome to the messaging app!",
-  "createdAt": "2023-10-01T12:00:00Z",
-  "sender" : {
-    "id": "system",
-    "username": "System Bot",
-    "profil": {
-      "avatar": "https://example.com/avatar.png",
-      "fullName": "System Bot"
-    }
-  },
-  "isDeletedBySender": false
-
-}
-
-*/
 const defaultMessages: MessagePublic[] = [
   {
     id: '1',

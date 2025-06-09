@@ -4,12 +4,12 @@ import { HonoContext } from '@messanger/types';
 import { userController } from './user/controllers/user-controller'
 import { authController } from './auth/controllers/auth-controller';
 import { profileController } from './user/controllers/profile-controller';
-import { messagesController } from './message/controllers/message-controller';
-import { messageGroupsController } from './message/controllers/message-groups-controller';
-import { groupMessagesController } from './message/controllers/group-messages-controller';
 import { errorHandler } from './handlers/error-handler';
 import { authMiddleware } from './middleware';
 import { websocket, webSocketConfig } from './websocket/config';
+import { conversationController } from './conversation/controllers/conversation-controller';
+import { conversationGroupController } from './conversation/controllers/conversation-group-controller';
+import { conversationGroupMessagesController } from './conversation/controllers/conversation-group-message-controller';
 
 
 const app = new Hono<{ Variables: HonoContext }>();
@@ -36,9 +36,9 @@ api.get('', (c) => c.text('Hello Hono!'))
 api.route('/users', userController);
 api.route('/auth', authController);
 api.route('/profile', profileController);
-api.route('/messages', messagesController);
-api.route('/message-groups', messageGroupsController);
-api.route('/group-messages', groupMessagesController);
+api.route('/conversations', conversationController);
+api.route('/conversation-groups', conversationGroupController);
+api.route('/conversation-groups-messages', conversationGroupMessagesController);
 
 app.route('/api', api);
 

@@ -1,14 +1,14 @@
 import { send } from "process";
 import { prismaClient } from "@messanger/prisma";
-import { MessageRequest, MessagePublic, messageSchema } from "@messanger/types";
+import { ConversationRequest, ConversationPublic, messageSchema } from "@messanger/types";
 
 
 
 
-export class MessageService {
-    private static messageRepository = prismaClient.message;
+export class ConversationService {
+    private static conversationRepository = prismaClient.conversation;
 
-    static async sendMessage(data: MessageRequest, senderId: string): Promise<MessagePublic> {
+    static async sendMessage(data: ConversationRequest, senderId: string): Promise<ConversationPublic> {
         data = messageSchema.parse(data);
         const sender = await prismaClient.user.findFirst({
             where: { id: senderId },
@@ -27,7 +27,7 @@ export class MessageService {
         if (sender.id === receiver.id) {
             throw new Error("Sender and receiver cannot be the same");
         }
-        const message = await this.messageRepository.create({
+        const message = await this.conversationRepository.create({
             data: {
                 content: data.content,
                 senderId: sender.id,
@@ -38,27 +38,27 @@ export class MessageService {
                 receiver: { include: { profile: true } }
             }
         });
-        return MessagePublic.fromMessage({
+        return ConversationPublic.fromConversationToConversationPublic({
             ...message,
             sender: { ...sender.profile!, user: { ...sender } },
             receiver: { ...receiver.profile!, user: { ...receiver } }
         });
     }
 
-    static async getMessageById(messageId: string, userId: string): Promise<MessagePublic> {
-        const message = await this.messageRepository.findUniqueOrThrow({
+    static async getMessageById(messageId: string, userId: string): Promise<ConversationPublic> {
+        const message = await this.conversationRepository.findUniqueOrThrow({
             where: { id: messageId },
             include: { sender: { include: { profile: { include: { user: true } } } }, receiver: { include: { profile: { include: { user: true } } } } }
         });
         if (message.receiverId !== userId && message.senderId !== userId) {
             throw new Error("Unauthorized");
         }
-        return MessagePublic.fromMessage({ ...message, sender: message.sender.profile!, receiver: message.receiver.profile! });
+        return ConversationPublic.fromConversationToConversationPublic({ ...message, sender: message.sender.profile!, receiver: message.receiver.profile! });
     }
 
-    static async getMessages(userId: string): Promise<MessagePublic[]> {
+    static async getMessages(userId: string): Promise<ConversationPublic[]> {
         console.log("Fetching messages for user:", userId);
-        const messages = await this.messageRepository.findMany({
+        const messages = await this.conversationRepository.findMany({
             where: {
                 OR: [
                     { senderId: userId },
@@ -76,22 +76,22 @@ export class MessageService {
         return messages.map(message => {
             const sender = message.sender;
             const receiver = message.receiver;
-            return MessagePublic.fromMessage({ ...message, sender: sender.profile!, receiver: receiver.profile! });
+            return ConversationPublic.fromConversationToConversationPublic({ ...message, sender: sender.profile!, receiver: receiver.profile! });
         });
     }
 
     static async deleteMessage(messageId: string, userId: string): Promise<void> {
-        const message = await this.messageRepository.findUniqueOrThrow({
+        const message = await this.conversationRepository.findUniqueOrThrow({
             where: { id: messageId },
             include: { sender: true, receiver: true }
         });
         if (message.senderId === userId) {
-            await this.messageRepository.update({
+            await this.conversationRepository.update({
                 where: { id: messageId },
                 data: { isDeletedBySender: true }
             });
         } else if (message.receiverId === userId) {
-            await this.messageRepository.update({
+            await this.conversationRepository.update({
                 where: { id: messageId },
                 data: { isDeletedByReceiver: true }
             });

@@ -60,7 +60,7 @@ function RootLayoutNav() {
   const colorScheme = useColorScheme();
   const { token, isLoading } = useAuthStore();
   const paperTheme = rnPaperTheme[colorScheme ?? 'light'];
-  const PUBLIC_ROUTES = ['/messages', '/login', '/register', '/forgot-password'];
+  const PUBLIC_ROUTES = ['/conversations', '/login', '/register', '/forgot-password'];
 
 
   React.useEffect(() => {

@@ -1,14 +1,14 @@
-import { HonoContext } from "@types/hono-context"
+import { HonoContext } from "@messanger/types"
 import { Hono } from "hono"
-import { GroupMessagesService } from "../services/group-messages-service"
+import { ConversationGroupMessagesService } from "../services/conversation-group-message-service"
 
-export const groupMessagesController = new Hono<{ Variables: HonoContext }>()
+export const conversationGroupController = new Hono<{ Variables: HonoContext }>()
 
-groupMessagesController.get("/:groupId", async (c) => {
+conversationGroupController.get("/:groupId", async (c) => {
     const user = c.get("authenticatedUser")
     const groupId = c.req.param("groupId")
 
-    const messages = await GroupMessagesService.getGroupMessages(groupId, user.id)
+    const messages = await ConversationGroupMessagesService.getGroupMessages(groupId, user.id)
 
     return c.json({
         success: true,
@@ -29,12 +29,12 @@ groupMessagesController.get("/:groupId", async (c) => {
 //     })
 // })
 
-groupMessagesController.post("/:groupId", async (c) => {
+conversationGroupController.post("/:groupId", async (c) => {
     const user = c.get("authenticatedUser")
     const groupId = c.req.param("groupId")
 
     const request = await c.req.json()
-    const result = await GroupMessagesService.sendGroupMessage(groupId, user.id, request)
+    const result = await ConversationGroupMessagesService.sendGroupMessage(groupId, user.id, request)
 
     return c.json({
         success: true,
@@ -57,12 +57,12 @@ groupMessagesController.post("/:groupId", async (c) => {
 //     })
 // })
 
-groupMessagesController.delete("/:groupId/messages/:messageId", async (c) => {
+conversationGroupController.delete("/:groupId/messages/:messageId", async (c) => {
     const user = c.get("authenticatedUser")
     const groupId = c.req.param("groupId")
     const messageId = c.req.param("messageId")
 
-    await GroupMessagesService.deleteGroupMessage(groupId, messageId, user.id)
+    await ConversationGroupMessagesService.deleteGroupMessage(groupId, messageId, user.id)
 
     return c.json({
         success: true,
@@ -70,12 +70,12 @@ groupMessagesController.delete("/:groupId/messages/:messageId", async (c) => {
     })
 })
 
-groupMessagesController.delete("/:groupId/messages/:messageId/by-owner", async (c) => {
+conversationGroupController.delete("/:groupId/messages/:messageId/by-owner", async (c) => {
     const user = c.get("authenticatedUser")
     const groupId = c.req.param("groupId")
     const messageId = c.req.param("messageId")
 
-    await GroupMessagesService.deleteGroupMessagesByOwnerGroup(groupId, user.id)
+    await ConversationGroupMessagesService.deleteGroupMessagesByOwnerGroup(groupId, user.id)
 
     return c.json({
         success: true,

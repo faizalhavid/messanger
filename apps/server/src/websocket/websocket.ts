@@ -3,12 +3,12 @@ import { WSContext } from "hono/ws";
 
 export enum WsEventName {
     Authentication = 'authentication',
-    MessageCreated = "message-created",
-    MessageDeleted = "message-deleted",
+    ConversationCreated = "conversation-created",
+    ConversationDeleted = "conversation-deleted",
     Notification = "notification",
     // Todo: need to implement this
-    //MessageUpdated = "message-updated",
-    MessageRead = "message-read",
+    //ConversationUpdated = "conversation-updated",
+    ConversationRead = "conversation-read",
     UserStatusChange = "user-status-change",
     UserTyping = "user-typing",
     UserOnline = "user-online",
@@ -24,7 +24,7 @@ export interface WsBroadcastEvent<T = any> {
 }
 
 export enum WsTopic {
-    Messages = "messages",
+    Conversations = "conversations",
     Notifications = "notifications",
 }
 

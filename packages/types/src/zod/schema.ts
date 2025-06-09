@@ -111,4 +111,20 @@ export const logoutSchema = z.object({
     token: z.string().min(1, "Token is required")
 });
 
+export const imageSchema = z.object({
+    image: z.instanceof(File).refine(file => file.size <= 5 * 1024 * 1024, {
+        message: "Image size must not exceed 5MB"
+    }).refine(file => ['image/jpeg', 'image/png', 'image/gif'].includes(file.type), {
+        message: "Image must be in JPEG, PNG, or GIF format"
+    })
+});
+
+export const fileSchema = z.object({
+    file: z.instanceof(File).refine(file => file.size <= 10 * 1024 * 1024, {
+        message: "File size must not exceed 10MB"
+    }).refine(file => ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'].includes(file.type), {
+        message: "File must be in PDF or Word format"
+    })
+});
+
 export const tokenSchema = z.string().min(1, "Token is required");

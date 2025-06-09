@@ -1,17 +1,17 @@
 import { prismaClient } from "@messanger/prisma";
-import { Message } from "@prisma/client";
-import { MessageGroupsPublic, MessageGroupsRequest, MessagePublic, MessageGroupsMessagesRequest, messageGroupsSchema, messageGroupsBaseSchema, messageSchema } from "@messanger/types";
+import { Conversation } from "@prisma/client";
+import { ConversationGroupsPublic, ConversationGroupRequest, ConversationPublic, ConversationGroupsMessagesRequest, messageGroupsSchema, messageGroupsBaseSchema, messageSchema } from "@messanger/types";
 
 
 
-export class MessageGroupService {
-    private static messageGroupRepository = prismaClient.messageGroups;
-    private static messageGroupMessagesRepository = prismaClient.messageGroupMessages;
-    private static groupMemberRepository = prismaClient.messageGroupMembers;
-    private static messageRepository = prismaClient.message;
+export class ConversationGroupService {
+    private static conversationGroupRepository = prismaClient.conversationGroup;
+    private static conversationGroupMessagesRepository = prismaClient.conversationGroupMessages;
+    private static conversationGroupMembersRepository = prismaClient.conversationGroupMembers;
+    private static conversationRepository = prismaClient.conversation;
 
-    static async getUserMessageGroups(userId: string): Promise<MessageGroupsPublic[]> {
-        const groups = await this.messageGroupRepository.findMany({
+    static async getUserMessageGroups(userId: string): Promise<ConversationGroupsPublic[]> {
+        const groups = await this.conversationGroupRepository.findMany({
             where: {
                 isDeleted: false,
                 members: {
@@ -31,11 +31,11 @@ export class MessageGroupService {
                 createdAt: "desc",
             },
         });
-        return groups.map(group => MessageGroupsPublic.fromPrismaQuery(group));
+        return groups.map(group => ConversationGroupsPublic.fromPrismaToConversationGroupPublic(group));
     }
 
-    static async getMessageGroupsById(groupId: string, userId: string): Promise<MessageGroupsPublic> {
-        const group = await this.messageGroupRepository.findFirst({
+    static async getMessageGroupsById(groupId: string, userId: string): Promise<ConversationGroupsPublic> {
+        const group = await this.conversationGroupRepository.findFirst({
             where: {
                 id: groupId,
                 isDeleted: false,
@@ -58,11 +58,11 @@ export class MessageGroupService {
         if (!group) {
             throw new Error("Group not found or user is not a member");
         }
-        return MessageGroupsPublic.fromPrismaQuery(group);
+        return ConversationGroupsPublic.fromPrismaToConversationGroupPublic(group);
     }
 
-    static async getMessageGroupsPublic(groupId: string): Promise<MessageGroupsPublic> {
-        const group = await this.messageGroupRepository.findFirst({
+    static async getMessageGroupsPublic(groupId: string): Promise<ConversationGroupsPublic> {
+        const group = await this.conversationGroupRepository.findFirst({
             where: {
                 id: groupId,
                 isPublic: true,
@@ -81,10 +81,10 @@ export class MessageGroupService {
         if (!group) {
             throw new Error("Group not found");
         }
-        return MessageGroupsPublic.fromPrismaQuery(group);
+        return ConversationGroupsPublic.fromPrismaToConversationGroupPublic(group);
     }
 
-    static async createMessageGroup(req: MessageGroupsRequest, userId: string) {
+    static async createMessageGroup(req: ConversationGroupRequest, userId: string) {
         req = messageGroupsSchema.parse(req);
 
         // Check if all userIds in req.members exist in the users table
@@ -102,7 +102,7 @@ export class MessageGroupService {
         const uniqueMemberIds = Array.from(new Set(req.members));
         const members = uniqueMemberIds.map(userId => ({ userId }));
 
-        const group = await this.messageGroupRepository.create({
+        const group = await this.conversationGroupRepository.create({
             data: {
                 ...req,
                 ownerId: userId,
@@ -122,12 +122,12 @@ export class MessageGroupService {
             },
         });
 
-        return MessageGroupsPublic.fromPrismaQuery(group);
+        return ConversationGroupsPublic.fromPrismaToConversationGroupPublic(group);
     }
 
-    static async updateMessageGroup(groupId: string, req: Partial<MessageGroupsRequest>, userId: string): Promise<MessageGroupsPublic> {
+    static async updateMessageGroup(groupId: string, req: Partial<ConversationGroupRequest>, userId: string): Promise<ConversationGroupsPublic> {
         req = messageGroupsBaseSchema.partial().parse(req);
-        const group = await this.messageGroupRepository.findFirst({
+        const group = await this.conversationGroupRepository.findFirst({
             where: {
                 id: groupId,
                 ownerId: userId,
@@ -144,7 +144,7 @@ export class MessageGroupService {
         if (!group) {
             throw new Error("Group not found or user is not the owner");
         }
-        const updatedGroup = await this.messageGroupRepository.update({
+        const updatedGroup = await this.conversationGroupRepository.update({
             where: { id: groupId },
             data: {
                 name: req.name ?? group.name,
@@ -166,12 +166,12 @@ export class MessageGroupService {
                 },
             },
         });
-        return MessageGroupsPublic.fromPrismaQuery(updatedGroup);
+        return ConversationGroupsPublic.fromPrismaToConversationGroupPublic(updatedGroup);
     }
 
     static async deleteMemberFromGroup(groupId: string, userId: string, memberId: string): Promise<void> {
         console.log("Deleting member from group:", groupId, userId, memberId);
-        const group = await this.messageGroupRepository.findFirst({
+        const group = await this.conversationGroupRepository.findFirst({
             where: {
                 id: groupId,
                 ownerId: userId,
@@ -180,9 +180,9 @@ export class MessageGroupService {
         if (!group) {
             throw new Error("Group not found or user is not the owner");
         }
-        const member = await this.groupMemberRepository.findFirst({
+        const member = await this.conversationGroupMembersRepository.findFirst({
             where: {
-                messageGroupId: groupId,
+                groupId: groupId,
                 userId: memberId,
             },
         });
@@ -190,7 +190,7 @@ export class MessageGroupService {
             throw new Error("Member not found in the group");
         }
         //softdelete member
-        await this.groupMemberRepository.update({
+        await this.conversationGroupMembersRepository.update({
             where: {
                 id: member.id,
             },
@@ -201,7 +201,7 @@ export class MessageGroupService {
         });
     }
     static async deleteMessageGroup(groupId: string, userId: string): Promise<void> {
-        const group = await this.messageGroupRepository.findFirst({
+        const group = await this.conversationGroupRepository.findFirst({
             where: {
                 id: groupId,
                 ownerId: userId,
@@ -210,7 +210,7 @@ export class MessageGroupService {
         if (!group) {
             throw new Error("Group not found or user is not the owner");
         }
-        await this.messageGroupRepository.update({
+        await this.conversationGroupRepository.update({
             where: { id: groupId },
             data: {
                 deletedAt: new Date(),
@@ -219,8 +219,8 @@ export class MessageGroupService {
         });
     }
 
-    static async getMessagesGroup(groupId: string, userId: string): Promise<MessagePublic[]> {
-        const group = await this.messageGroupRepository.findFirst({
+    static async getMessagesGroup(groupId: string, userId: string): Promise<ConversationPublic[]> {
+        const group = await this.conversationGroupRepository.findFirst({
             where: {
                 id: groupId,
                 members: {
@@ -233,25 +233,38 @@ export class MessageGroupService {
         if (!group) {
             throw new Error("Group not found or user is not a member");
         }
-        const messages = await this.messageGroupMessagesRepository.findMany({
+        const messages = await this.conversationGroupMessagesRepository.findMany({
             where: {
-                id: groupId,
+                groupId: groupId,
+                conversation: {
+                    isDeletedBySender: false,
+                    isDeletedByReceiver: false,
+                },
             },
             orderBy: {
                 createdAt: "asc",
             },
             include: {
-                message: true,
+                conversation: {
+                    include: {
+                        sender: { include: { profile: { include: { user: true } } } },
+                        receiver: { include: { profile: { include: { user: true } } } },
+                    },
+                }
             },
-        }) as unknown as Message[];
+        });
 
-        return messages.map(msg => MessagePublic.fromMessage(msg));
+        return messages.map(msg => ConversationPublic.fromConversationToConversationPublic({
+            ...msg.conversation,
+            sender: msg.conversation.sender.profile!,
+            receiver: msg.conversation.receiver.profile!,
+        }));
     }
 
-    static async sendMessageToGroup(req: MessageGroupsMessagesRequest, groupId: string, userId: string): Promise<MessagePublic> {
+    static async sendMessageToGroup(req: ConversationGroupsMessagesRequest, groupId: string, userId: string): Promise<ConversationPublic> {
         req.message = messageSchema.parse(req.message);
 
-        const group = await this.messageGroupRepository.findFirst({
+        const group = await this.conversationGroupRepository.findFirst({
             where: {
                 id: groupId,
                 members: {
@@ -267,22 +280,31 @@ export class MessageGroupService {
         if (!group) {
             throw new Error("Group not found or user is not a member");
         }
-        const message = await this.messageRepository.create({
+        const message = await this.conversationRepository.create({
             data: {
                 ...req.message,
                 senderId: userId,
             },
         });
-        const messageData = await this.messageGroupMessagesRepository.create({
+        const messageData = await this.conversationGroupMessagesRepository.create({
             data: {
-                messageId: message.id,
-                messageGroupId: group.id,
+                conversationId: message.id,
+                groupId: group.id,
             },
             include: {
-                message: true,
+                conversation: {
+                    include: {
+                        sender: { include: { profile: { include: { user: true } } } },
+                        receiver: { include: { profile: { include: { user: true } } } },
+                    },
+                },
             },
         });
-        return MessagePublic.fromMessage(messageData.message);
+        return ConversationPublic.fromConversationToConversationPublic({
+            ...messageData.conversation,
+            sender: messageData.conversation.sender.profile!,
+            receiver: messageData.conversation.receiver.profile!,
+        });
 
     }
 }

@@ -1,17 +1,17 @@
-import { HonoContext } from "@types/hono-context";
-import { BaseApiResponse, PaginatedResponse } from "@types/api-response";
-import { MessageGroupsPublic, MessagePublic } from "@messanger/types";
-import { MessageGroupService } from "../services/message-groups-service";
+import { HonoContext } from "@messanger/types";
+import { BaseApiResponse, PaginatedResponse } from "@messanger/types";
+import { ConversationGroupsPublic, ConversationPublic } from "@messanger/types";
+import { ConversationGroupService } from "../services/conversation-groups-service";
 import { Hono } from "hono";
 
 
 
-export const messageGroupsController = new Hono<{ Variables: HonoContext }>();
+export const conversationGroupMessagesController = new Hono<{ Variables: HonoContext }>();
 // list group user
-messageGroupsController.get("/", async (c) => {
+conversationGroupMessagesController.get("/", async (c) => {
     const user = c.get("authenticatedUser");
-    const result = await MessageGroupService.getUserMessageGroups(user.id);
-    const response: PaginatedResponse<MessageGroupsPublic> = {
+    const result = await ConversationGroupService.getUserMessageGroups(user.id);
+    const response: PaginatedResponse<ConversationGroupsPublic> = {
         success: true,
         message: "User groups retrieved successfully",
         data: {
@@ -30,10 +30,10 @@ messageGroupsController.get("/", async (c) => {
 });
 
 // get group by id
-messageGroupsController.get("/:id", async (c) => {
+conversationGroupMessagesController.get("/:id", async (c) => {
     const user = c.get("authenticatedUser");
     const groupId = c.req.param("id");
-    const group = await MessageGroupService.getMessageGroupsById(groupId, user.id);
+    const group = await ConversationGroupService.getMessageGroupsById(groupId, user.id);
     // TODO : Need to handle the case where the group is not found or user is not a member
     // if (!group) {
     //     return c.json({
@@ -44,7 +44,7 @@ messageGroupsController.get("/:id", async (c) => {
     //         }
     //     }, 404);
     // }
-    const response: BaseApiResponse<MessageGroupsPublic> = {
+    const response: BaseApiResponse<ConversationGroupsPublic> = {
         success: true,
         message: "Group retrieved successfully",
         data: group,
@@ -53,11 +53,11 @@ messageGroupsController.get("/:id", async (c) => {
 });
 
 // create group
-messageGroupsController.post("/", async (c) => {
+conversationGroupMessagesController.post("/", async (c) => {
     const user = c.get("authenticatedUser");
     const request = await c.req.json();
-    const result = await MessageGroupService.createMessageGroup(request, user.id);
-    const response: BaseApiResponse<MessageGroupsPublic> = {
+    const result = await ConversationGroupService.createMessageGroup(request, user.id);
+    const response: BaseApiResponse<ConversationGroupsPublic> = {
         success: true,
         message: "Group created successfully",
         data: result,
@@ -66,12 +66,12 @@ messageGroupsController.post("/", async (c) => {
 });
 
 // update group
-messageGroupsController.patch("/:id", async (c) => {
+conversationGroupMessagesController.patch("/:id", async (c) => {
     const user = c.get("authenticatedUser");
     const groupId = c.req.param("id");
     const request = await c.req.json();
-    const result = await MessageGroupService.updateMessageGroup(groupId, request, user.id);
-    const response: BaseApiResponse<MessageGroupsPublic> = {
+    const result = await ConversationGroupService.updateMessageGroup(groupId, request, user.id);
+    const response: BaseApiResponse<ConversationGroupsPublic> = {
         success: true,
         message: "Group updated successfully",
         data: result,
@@ -80,11 +80,11 @@ messageGroupsController.patch("/:id", async (c) => {
 });
 
 // delete member from group
-messageGroupsController.delete("/:id/members/:memberId", async (c) => {
+conversationGroupMessagesController.delete("/:id/members/:memberId", async (c) => {
     const user = c.get("authenticatedUser");
     const groupId = c.req.param("id");
     const memberId = c.req.param("memberId");
-    await MessageGroupService.deleteMemberFromGroup(groupId, user.id, memberId);
+    await ConversationGroupService.deleteMemberFromGroup(groupId, user.id, memberId);
     const response: BaseApiResponse = {
         success: true,
         message: "Member removed from group successfully",
@@ -92,10 +92,10 @@ messageGroupsController.delete("/:id/members/:memberId", async (c) => {
     return c.json(response, 201);
 });
 
-messageGroupsController.delete("/:id", async (c) => {
+conversationGroupMessagesController.delete("/:id", async (c) => {
     const user = c.get("authenticatedUser");
     const groupId = c.req.param("id");
-    await MessageGroupService.deleteMessageGroup(groupId, user.id);
+    await ConversationGroupService.deleteMessageGroup(groupId, user.id);
     const response: BaseApiResponse = {
         success: true,
         message: "Group deleted successfully",
@@ -103,11 +103,11 @@ messageGroupsController.delete("/:id", async (c) => {
     return c.json(response);
 });
 
-messageGroupsController.get("/:id/messages", async (c) => {
+conversationGroupMessagesController.get("/:id/messages", async (c) => {
     const user = c.get("authenticatedUser");
     const groupId = c.req.param("id");
-    const messages = await MessageGroupService.getMessagesGroup(groupId, user.id);
-    const response: PaginatedResponse<MessagePublic> = {
+    const messages = await ConversationGroupService.getMessagesGroup(groupId, user.id);
+    const response: PaginatedResponse<ConversationPublic> = {
         success: true,
         message: "Messages retrieved successfully",
         data: {
@@ -125,12 +125,12 @@ messageGroupsController.get("/:id/messages", async (c) => {
     return c.json(response);
 });
 
-messageGroupsController.post("/:id/messages", async (c) => {
+conversationGroupMessagesController.post("/:id/messages", async (c) => {
     const user = c.get("authenticatedUser");
     const groupId = c.req.param("id");
     const request = await c.req.json();
-    const result = await MessageGroupService.sendMessageToGroup(request, groupId, user.id);
-    const response: BaseApiResponse<MessagePublic> = {
+    const result = await ConversationGroupService.sendMessageToGroup(request, groupId, user.id);
+    const response: BaseApiResponse<ConversationPublic> = {
         success: true,
         message: "Message sent to group successfully",
         data: result,
