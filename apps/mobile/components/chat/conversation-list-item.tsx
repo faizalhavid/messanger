@@ -1,15 +1,15 @@
-import { MessageUserProfile } from '@messanger/types'
+import { ConversationUserProfile } from '@messanger/types'
 import React from 'react'
 import { Avatar, Badge, List, Text } from 'react-native-paper'
 import { Pressable, StyleSheet, View } from 'react-native'
 
 type SenderProps = {
-    sender: MessageUserProfile,
+    sender: ConversationUserProfile,
     message?: string,
     createdAt?: Date,
     unreadCount?: number,
     onPress?: () => void,
-    onAvatarPress?: (sender: MessageUserProfile) => void,
+    onAvatarPress?: (sender: ConversationUserProfile) => void,
 }
 
 export default function ConversationListItem({ sender, message, createdAt, unreadCount = 2, onPress, onAvatarPress }: SenderProps) {
@@ -26,6 +26,7 @@ export default function ConversationListItem({ sender, message, createdAt, unrea
 
     return (
         <List.Item
+            key={sender.id}
             style={styles.container}
             onPress={onPress}
             title={() => (

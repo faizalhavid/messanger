@@ -57,7 +57,7 @@ export default function AuthIndex() {
             const response = await postLogin(data);
             if (response.success) {
                 // Handle successful login, e.g., navigate to the main app screen
-                router.push('/(tabs)');
+                //router.push('/(tabs)');
             } else {
                 pageState[1]({
                     ...pageState[0],
@@ -198,7 +198,7 @@ export default function AuthIndex() {
             <Button
                 mode="outlined"
                 onPress={() => {
-                    router.push('/(tabs)/messages');
+                    router.push('/(tabs)/conversations');
                 }}
                 style={{ marginTop: 16 }}
             >

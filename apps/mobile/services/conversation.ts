@@ -1,10 +1,10 @@
-import { MessagePublic, PaginatedResponse } from "@messanger/types";
+import { ConversationPublic, PaginatedResponse } from "@messanger/types";
 import axios from "axios";
 
 
-export const getMessages = async (): Promise<PaginatedResponse<MessagePublic>> => {
+export const getConversations = async (): Promise<PaginatedResponse<ConversationPublic>> => {
     try {
-        const response = await axios.get("/messages", {
+        const response = await axios.get("/conversations", {
             headers: {
                 'Content-Type': 'application/json',
             },
@@ -14,7 +14,7 @@ export const getMessages = async (): Promise<PaginatedResponse<MessagePublic>> =
             throw new Error("Failed to fetch messages");
         }
 
-        const data: PaginatedResponse<MessagePublic> = response.data;
+        const data: PaginatedResponse<ConversationPublic> = response.data;
         return data;
     } catch (error) {
         console.error("Error fetching messages:", error);

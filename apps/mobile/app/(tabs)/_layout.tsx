@@ -19,7 +19,7 @@ export default function TabLayout() {
 
   return (
     <Tabs
-      initialRouteName='(conversations)/index'
+      initialRouteName='conversations'
       screenOptions={{
         // tabBarActiveTintColor: appTheme[colorScheme ?? 'light'].tint,
         // Disable the static render of the header on web
@@ -27,7 +27,8 @@ export default function TabLayout() {
         headerShown: useClientOnlyValue(false, true),
       }}>
       <Tabs.Screen
-        name="conversations" options={{
+        name="conversations"
+        options={{
           title: 'Messages',
           tabBarIcon: ({ color }) => <FontAwesome name="envelope" color={color} size={28} />,
           headerRight: () => (

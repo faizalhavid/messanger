@@ -1,15 +1,15 @@
 import { StyleSheet, View } from 'react-native';
 import React, { useEffect } from 'react';
-import { MessagePublic } from '@messanger/types';
-import { getMessages } from '@/services/message';
 import { Divider, Text } from 'react-native-paper';
 import AppSafeArea from '@/components/AppSafeArea';
 import BubbleChat from '@/components/chat/bubble';
 import ConversationListItem from '@/components/chat/conversation-list-item';
 import { useRouter } from 'expo-router';
+import { ConversationPublic } from '@messanger/types';
+import { getConversations } from '@/services/conversation';
 
 
-const defaultMessages: MessagePublic[] = [
+const defaultMessages: ConversationPublic[] = [
   {
     id: '1',
     content: 'Welcome to the messaging app!',
@@ -56,7 +56,7 @@ export default function TabOneScreen() {
     showPassword: false,
     disableButtonSubmit: false,
     generalError: '',
-    messages: [] as MessagePublic[],
+    messages: [] as ConversationPublic[],
   });
 
   const fetchMessages = async () => {
@@ -65,7 +65,7 @@ export default function TabOneScreen() {
       isLoading: true,
     });
     try {
-      const response = await getMessages();
+      const response = await getConversations();
       pageState[1]({
         ...pageState[0],
         isLoading: false,
@@ -91,9 +91,8 @@ export default function TabOneScreen() {
         pageState[0].messages.map((msg) => (
           <>
             <ConversationListItem
-              key={msg.id}
               sender={msg.sender}
-              onPress={() => router.push({ pathname: "/(tabs)/[messageid]", params: { messageid: msg.id } })}
+              onPress={() => router.push({ pathname: "/conversations/[id]", params: { id: msg.id } })}
               message={msg.content}
               createdAt={new Date(msg.createdAt)}
             // You can add more props as needed

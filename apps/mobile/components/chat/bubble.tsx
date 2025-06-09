@@ -1,4 +1,4 @@
-import { MessageUserProfile } from '@messanger/types';
+import { ConversationUserProfile } from '@messanger/types';
 import * as React from 'react';
 import { Surface, Text } from 'react-native-paper';
 
@@ -6,7 +6,7 @@ type BubbleProps = {
     message?: string;
     isSent?: boolean;
     createdAt?: Date;
-    sender: MessageUserProfile;
+    sender: ConversationUserProfile;
 };
 
 export default function BubbleChat({ message, isSent, createdAt }: BubbleProps) {

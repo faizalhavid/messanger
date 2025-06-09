@@ -56,7 +56,7 @@ export default function ForgotPassword() {
             if (response.success) {
                 // Handle successful password reset, e.g., navigate to a confirmation screen
                 router.push({
-                    pathname: '/(auth)/verifications',
+                    pathname: '/(auth)/verification',
                     params: { email: data.email }
                 });
             } else {
@@ -129,7 +129,6 @@ export default function ForgotPassword() {
                     error={!!pageState[0].email.error}
                     errorText={pageState[0].email.error || ''}
                 />
-
                 <Button
                     mode="contained"
                     onPress={handleForgotPassword}
