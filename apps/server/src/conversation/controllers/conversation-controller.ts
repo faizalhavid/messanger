@@ -1,4 +1,4 @@
-import { HonoContext } from "@messanger/types";
+import { HonoContext, ListUserConversationsResponse } from "@messanger/types";
 import { Hono } from "hono";
 import { ConversationService } from "../services/conversation-service";
 import { BaseApiResponse, PaginatedResponse } from "@messanger/types";
@@ -14,7 +14,7 @@ const topic = "conversation";
 conversationController.get("/", async (c) => {
     const user = c.get("authenticatedUser");
     console.log("Fetching messages for user:", user);
-    const messages = await ConversationService.getMessages(user.id);
+    const messages = await ConversationService.getConversations(user.id);
 
     const page = 1;
     const pageSize = messages.length;
@@ -40,15 +40,26 @@ conversationController.get("/", async (c) => {
 });
 
 conversationController.get("/:id", async (c) => {
-    const user = c.get("authenticatedUser");
-    const messageId = c.req.param("id");
-    const message = await ConversationService.getMessageById(messageId, user.id);
+    const userA = c.get("authenticatedUser");
+    const userB = c.req.param("id");
+    const message = await ConversationService.getConversationBetweenUsers(userA.id, userB);
 
-    const response: BaseApiResponse = {
+    const response: PaginatedResponse<ConversationPublic> = {
         success: true,
         message: "Message retrieved successfully",
-        data: message,
+        data: {
+            items: message,
+            meta: {
+                totalItems: 1,
+                totalPages: 1,
+                page: 1,
+                pageSize: 1,
+                hasNextPage: false,
+                hasPreviousPage: false
+            }
+        }
     };
+
     return c.json(response);
 });
 

@@ -31,6 +31,19 @@ describe('GET Conversation', () => {
             receiverId: usersTest[1].id
         });
 
+        await ConversationTest.create({
+            id: '2',
+            content: 'Hello, this is another test message!',
+            senderId: usersTest[1].id,
+            receiverId: usersTest[0].id
+        });
+        await ConversationTest.create({
+            id: '3',
+            content: 'Hello, this is a test message!',
+            senderId: usersTest[0].id,
+            receiverId: usersTest[1].id
+        });
+
     })
     it('should show all user conversations', async () => {
         const response = await fetch('http://localhost:3000/api/conversations', {
@@ -48,7 +61,7 @@ describe('GET Conversation', () => {
     });
 
     it('should show a specific conversation by ID', async () => {
-        const response = await fetch('http://localhost:3000/api/conversations/1', {
+        const response = await fetch(`http://localhost:3000/api/conversations/${usersTest[1].id}`, {
             method: 'GET',
             headers: { 'Authorization': usersTest[0].token }
         });
@@ -63,6 +76,7 @@ describe('GET Conversation', () => {
     afterEach(async () => {
         await UserTest.delete(usersTest[0].username);
         await UserTest.delete(usersTest[1].username);
+        await ConversationTest.deleteAll();
     });
 });
 
@@ -71,8 +85,8 @@ describe('POST Conversation', () => {
         await UserTest.create(usersTest[0]);
         await UserTest.create(usersTest[1]);
 
-        await ConversationTest.clearAllConversations(usersTest[0].id);
-        await ConversationTest.clearAllConversations(usersTest[1].id);
+        await ConversationTest.deleteAllByUser(usersTest[0].id);
+        await ConversationTest.deleteAllByUser(usersTest[1].id);
     })
     it('should create a new conversation', async () => {
         const response = await fetch('http://localhost:3000/api/conversations', {
@@ -100,8 +114,8 @@ describe('POST Conversation', () => {
         await UserTest.delete(usersTest[0].username);
         await UserTest.delete(usersTest[1].username);
 
-        await ConversationTest.clearAllConversations(usersTest[0].id);
-        await ConversationTest.clearAllConversations(usersTest[1].id);
+        await ConversationTest.deleteAllByUser(usersTest[0].id);
+        await ConversationTest.deleteAllByUser(usersTest[1].id);
     });
 });
 

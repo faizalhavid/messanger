@@ -7,6 +7,7 @@ import { Text } from 'react-native-paper'
 
 export default function ConversationDetail() {
     const params = useLocalSearchParams()
+    console.log("Conversation Detail Params", params)
     return (
         <View>
             <Text>Conversation ID: {params.messageid}</Text>

@@ -1,14 +1,16 @@
 import React, { useState } from "react";
 import AppSafeArea from "@/components/AppSafeArea";
-import { Stack, useRouter } from "expo-router";
+import { Stack, usePathname, useRouter } from "expo-router";
 import { Button, IconButton, Text } from "react-native-paper";
 import AppTextInput from "@/components/AppTextInput";
 import { loginSchema } from "@messanger/types";
 import { postLogin } from "@/services/auth";
 import StackWrapper from "@/components/StackWrapper";
+import { useAuthStore } from "@/store/auth";
 
-export default function AuthIndex() {
+export default function Login() {
     const router = useRouter();
+    const { setUser, isAuthenticated, setToken } = useAuthStore();
     const pageState = useState({
         isLoading: false,
         showPassword: false,
@@ -23,7 +25,7 @@ export default function AuthIndex() {
             error: ''
         },
         password: {
-            value: 'Barakadut123@',
+            value: 'pAssword123@',
             error: ''
         },
     });
@@ -56,8 +58,20 @@ export default function AuthIndex() {
         try {
             const response = await postLogin(data);
             if (response.success) {
+
                 // Handle successful login, e.g., navigate to the main app screen
                 //router.push('/(tabs)');
+                // @ts-ignore
+                setToken(response.data?.data.token ?? "");
+                // @ts-ignore
+                setUser(response.data?.data.user ?? null);
+                isAuthenticated();
+                pageState[1]({
+                    ...pageState[0],
+                    isLoading: false,
+                    generalError: ''
+                });
+                router.push('/(tabs)/conversations');
             } else {
                 pageState[1]({
                     ...pageState[0],

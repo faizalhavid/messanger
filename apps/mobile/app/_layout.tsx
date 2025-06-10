@@ -62,17 +62,19 @@ function RootLayoutNav() {
   const paperTheme = rnPaperTheme[colorScheme ?? 'light'];
   const PUBLIC_ROUTES = ['/conversations', '/login', '/register', '/forgot-password'];
 
-
+  if (isLoading) {
+    return <Text>Loading...</Text>;
+  }
   React.useEffect(() => {
     console.log('Pathname:', pathName);
+    const isAuthenticated = !token && !PUBLIC_ROUTES.includes(pathName);
+    console.log("Is Authenticated:", isAuthenticated, isLoading);
     if (!isLoading && !token && !PUBLIC_ROUTES.includes(pathName)) {
       route.replace('/(auth)/login');
     }
   }, [isLoading, token, pathName, route]);
 
-  if (isLoading) {
-    return <Text>Loading...</Text>;
-  }
+
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <PaperProvider theme={paperTheme}>

@@ -6,6 +6,11 @@ export type ConversationRequest = {
     receiverId: string;
 }
 
+export interface ConversationGroupsMessagesRequest {
+    message: ConversationRequest;
+}
+
+
 export interface ConversationUserProfile extends Omit<ProfilePublic, "updatedAt" | "bioId" | "userId"> { }
 
 export interface ConversationPublic extends Omit<Conversation, "updatedAt" | "senderId" | "receiverId"> {
@@ -20,6 +25,7 @@ export namespace ConversationPublic {
         return {
             id: conversation.id,
             content: conversation.content,
+            isRead: conversation.isRead,
             createdAt: conversation.createdAt,
             isDeletedBySender: conversation.isDeletedBySender,
             isDeletedByReceiver: conversation.isDeletedByReceiver,
@@ -34,7 +40,11 @@ export namespace ConversationPublic {
     }
 }
 
-export interface ConversationGroupsMessagesRequest {
-    message: ConversationRequest;
+export interface ListUserConversationsResponse {
+    lastMessage: ConversationPublic | null;
+    sender: ConversationUserProfile;
+    updatedAt: Date;
+    receiver: ConversationUserProfile;
+    // unreadCount: number;
 }
 

@@ -68,6 +68,9 @@ export class UserTest {
             }
         })
     }
+    static async deleteAll() {
+        await prismaClient.user.deleteMany({});
+    }
 }
 
 export class ProfileTest {
@@ -105,6 +108,9 @@ export class ProfileTest {
             }
         })
     }
+    static async deleteAll() {
+        await prismaClient.profile.deleteMany({});
+    }
 
 }
 
@@ -125,7 +131,7 @@ export class ConversationTest {
             }
         });
     }
-    static async clearAllConversations(userId: string) {
+    static async deleteAllByUser(userId: string) {
         await prismaClient.conversation.deleteMany({
             where: {
                 OR: [
@@ -134,6 +140,10 @@ export class ConversationTest {
                 ]
             }
         });
+    }
+
+    static async deleteAll() {
+        await prismaClient.conversation.deleteMany({});
     }
 }
 

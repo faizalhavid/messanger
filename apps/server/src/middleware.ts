@@ -2,7 +2,7 @@ import { HTTPException } from 'hono/http-exception';
 import { Context } from 'hono';
 import { UserService } from './user/services/user-service';
 
-const publicRoutes = ['/api/auth'];
+const publicRoutes = ['/api/auth', '/api/seed', '/api/clear'];
 
 export const authMiddleware = async (c: Context, next: () => Promise<void>) => {
     console.log('Auth middleware triggered for path:', c.req.path);

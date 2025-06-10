@@ -1,21 +1,21 @@
-import { MessagePublic } from "@messanger/types";
+import { ConversationPublic } from "@messanger/types";
 import { create } from "zustand";
 
 
 
 type MessageState = {
-    messages: Record<string, MessagePublic[]>;
-    addMessage: (msg: MessagePublic) => void;
-    setMessages: (msg: MessagePublic[]) => void;
+    messages: Record<string, ConversationPublic[]>;
+    addMessage: (msg: ConversationPublic) => void;
+    setMessages: (msg: ConversationPublic[]) => void;
     removeMessage: (messageId: string) => void;
-    updateMessage: (message: MessagePublic) => void;
+    updateMessage: (message: ConversationPublic) => void;
     clearMessages: () => void;
 };
 
 
 export const useMessageStore = create<MessageState>((set) => ({
     messages: {},
-    addMessage: (msg: MessagePublic) =>
+    addMessage: (msg: ConversationPublic) =>
         set((state) => {
             const cid = msg.id;
             const existingMessages = state.messages[cid] || [];
@@ -35,7 +35,7 @@ export const useMessageStore = create<MessageState>((set) => ({
                 }
                 acc[msg.id].push(msg);
                 return acc;
-            }, {} as Record<string, MessagePublic[]>);
+            }, {} as Record<string, ConversationPublic[]>);
 
             return { messages: { ...state.messages, ...newMessages } };
         }),

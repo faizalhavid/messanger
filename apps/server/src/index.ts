@@ -10,6 +10,7 @@ import { websocket, webSocketConfig } from './websocket/config';
 import { conversationController } from './conversation/controllers/conversation-controller';
 import { conversationGroupController } from './conversation/controllers/conversation-group-controller';
 import { conversationGroupMessagesController } from './conversation/controllers/conversation-group-message-controller';
+import { ConversationTest, ProfileTest, usersTest, UserTest } from 'tests/test-utils';
 
 
 const app = new Hono<{ Variables: HonoContext }>();
@@ -24,6 +25,78 @@ const api = new Hono<{ Variables: HonoContext }>();
 
 api.use(authMiddleware);
 api.onError(errorHandler);
+// debug only
+api.get('/seed', async (c) => {
+    await ProfileTest.deleteAll();
+    await UserTest.deleteAll();
+    await ConversationTest.deleteAll();
+    // Seed the database with initial data
+    await UserTest.create(usersTest[0]);
+    await ProfileTest.create({
+        userId: usersTest[0].id,
+        profile: {
+            firstName: 'John',
+            lastName: 'Doe',
+            avatar: 'https://example.com/avatar.jpg',
+        }
+    });
+    await UserTest.create(usersTest[1]);
+    await ProfileTest.create({
+        userId: usersTest[1].id,
+        profile: {
+            firstName: 'Jane',
+            lastName: 'Doe',
+            avatar: 'https://example.com/avatar2.jpg',
+        }
+    });
+    await ConversationTest.create({
+        id: '1',
+        content: 'Hello, this is a test conversation',
+        senderId: usersTest[0].id,
+        receiverId: usersTest[1].id,
+    });
+    await ConversationTest.create({
+        id: '2',
+        content: 'Hello, this is another test conversation',
+        senderId: usersTest[1].id,
+        receiverId: usersTest[0].id,
+    });
+    await ConversationTest.create({
+        id: '3',
+        content: 'This is a group conversation',
+        senderId: usersTest[0].id,
+        receiverId: usersTest[1].id
+    });
+    await ConversationTest.create({
+        id: '4',
+        content: 'This is a group conversation with multiple users',
+        senderId: usersTest[1].id,
+        receiverId: usersTest[0].id
+    });
+
+    await ConversationTest.create({
+        id: '5',
+        content: 'This is a group conversation with multiple users',
+        senderId: usersTest[0].id,
+        receiverId: usersTest[1].id
+    });
+
+    await ConversationTest.create({
+        id: '6',
+        content: 'This is a group conversation with multiple users',
+        senderId: usersTest[1].id,
+        receiverId: usersTest[0].id
+    });
+
+    await ConversationTest.create({
+        id: '7',
+        content: 'This is a group conversation with multiple users',
+        senderId: usersTest[0].id,
+        receiverId: usersTest[1].id
+    });
+    return c.text('Database seeded');
+});
+
 api.get('', (c) => c.text('Hello Hono!'))
 api.route('/users', userController);
 api.route('/auth', authController);

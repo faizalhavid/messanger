@@ -2,6 +2,7 @@ import { ConversationUserProfile } from '@messanger/types'
 import React from 'react'
 import { Avatar, Badge, List, Text } from 'react-native-paper'
 import { Pressable, StyleSheet, View } from 'react-native'
+import StackWrapper from '../StackWrapper'
 
 type SenderProps = {
     sender: ConversationUserProfile,
@@ -13,7 +14,9 @@ type SenderProps = {
 }
 
 export default function ConversationListItem({ sender, message, createdAt, unreadCount = 2, onPress, onAvatarPress }: SenderProps) {
+    console.log("Sender", message);
     const fullName = `${sender.firstName} ${sender.lastName}`
+    // Todo : Format the createdAt date to a more readable format
     const time = sender.createdAt
         ? new Date(sender.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         : '';
@@ -27,28 +30,38 @@ export default function ConversationListItem({ sender, message, createdAt, unrea
     return (
         <List.Item
             key={sender.id}
-            style={styles.container}
+            style={StyleSheet.flatten([
+                { paddingVertical: 8, paddingHorizontal: 16 },
+
+            ])}
             onPress={onPress}
             title={() => (
-                <View style={styles.row}>
-                    <Text variant="titleMedium" numberOfLines={1} style={styles.name}>{fullName}</Text>
-                    <Text variant="bodySmall" style={styles.time}>{time}</Text>
-                </View>
+                <StackWrapper flexDirection='row' alignItems='center' justifyContent='space-between'>
+                    <Text variant="titleMedium" numberOfLines={1}>{fullName}</Text>
+                    <Text variant="bodySmall" >{time}</Text>
+                </StackWrapper>
             )}
             description={() => (
-                <View style={styles.row}>
-                    <Text variant="bodyMedium" numberOfLines={1} style={styles.message}>{message}</Text>
+                <StackWrapper flexDirection='row' alignItems='center' justifyContent='space-between'>
+                    <Text
+                        variant="bodyMedium"
+                        numberOfLines={1}
+                        ellipsizeMode="tail"
+                        style={{ maxWidth: '80%' }}
+                    >
+                        {message}
+                    </Text>
                     {unreadCount > 0 && (
-                        <Badge style={styles.badge}>{unreadCount}</Badge>
+                        <Badge >{unreadCount}</Badge>
                     )}
-                </View>
+                </StackWrapper>
             )}
             left={() => (
                 <Pressable onPress={handleAvatarPress} hitSlop={10}>
                     <Avatar.Image
                         size={48}
                         source={{ uri: sender.avatar || 'https://via.placeholder.com/150' }}
-                        style={styles.avatar}
+
                     />
                 </Pressable>
             )}
@@ -56,36 +69,3 @@ export default function ConversationListItem({ sender, message, createdAt, unrea
     )
 }
 
-const styles = StyleSheet.create({
-    container: {
-        paddingVertical: 4,
-        paddingHorizontal: 0,
-    },
-    row: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-    },
-    name: {
-        flex: 1,
-        fontWeight: 'bold',
-    },
-    time: {
-        color: '#888',
-        marginLeft: 8,
-        fontSize: 12,
-    },
-    message: {
-        flex: 1,
-        color: '#444',
-    },
-    badge: {
-        marginLeft: 8,
-        alignSelf: 'center',
-        backgroundColor: '#25D366',
-        color: 'white',
-    },
-    avatar: {
-        marginRight: 8,
-    },
-});

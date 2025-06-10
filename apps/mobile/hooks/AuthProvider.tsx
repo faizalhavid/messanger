@@ -13,6 +13,7 @@ const AuthProvider = ({ children }: Props) => {
         const bootstrap = async () => {
             try {
                 const storedToken = await AsyncStorage.getItem('token');
+                console.log('Loaded token from storage:', storedToken);
                 if (storedToken && storedToken !== token) {
                     setToken(storedToken);
                 }

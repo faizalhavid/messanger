@@ -1,6 +1,8 @@
 import React, { useEffect } from 'react';
 import { SafeAreaView, View, ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Alert } from 'react-native';
 
+type PaddingType = number | { top?: number; bottom?: number; left?: number; right?: number; vertical?: number; horizontal?: number };
+
 type Props = {
     loading?: boolean;
     header?: React.ReactNode;
@@ -8,14 +10,15 @@ type Props = {
     flexDirection?: 'row' | 'column';
     alignItems?: 'flex-start' | 'center' | 'flex-end' | 'stretch' | 'baseline';
     justifyContent?: 'flex-start' | 'center' | 'flex-end' | 'space-between' | 'space-around' | 'space-evenly';
-    padding?: number;
-    onRefresh?: () => void;
+    padding?: PaddingType;
     refreshing?: boolean;
     scrollable?: boolean;
     style?: object;
     errorMessage?: string;
     onDismissError?: () => void;
     space?: number;
+    automaticallyAdjustKeyboardInsets?: boolean;
+    automaticallyAdjustContentInsets?: boolean;
 };
 
 export default function AppSafeArea({
@@ -26,7 +29,6 @@ export default function AppSafeArea({
     alignItems = 'stretch',
     justifyContent = 'flex-start',
     padding = 25,
-    onRefresh,
     refreshing = false,
     scrollable = false,
     style,
@@ -64,20 +66,28 @@ export default function AppSafeArea({
         : children;
 
     return (
-        <SafeAreaView style={[styles.safeArea, { paddingHorizontal: padding, paddingVertical: padding * 1.5 }, style]}>
+        <SafeAreaView
+            style={[
+                styles.safeArea,
+                typeof padding === 'number'
+                    ? { padding }
+                    : {
+                        paddingTop: padding.top ?? padding.vertical ?? 0,
+                        paddingBottom: padding.bottom ?? padding.vertical ?? 0,
+                        paddingLeft: padding.left ?? padding.horizontal ?? 0,
+                        paddingRight: padding.right ?? padding.horizontal ?? 0,
+                    },
+                style,
+            ]}
+        >
+
+            {refreshing ? <ActivityIndicator color="#ffffff" /> : null}
             {header}
             <Container
                 style={[
                     styles.content,
                     { flexDirection, alignItems, justifyContent }
                 ]}
-                {...(scrollable && onRefresh
-                    ? {
-                        refreshControl: (
-                            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-                        ),
-                    }
-                    : {})}
             >
                 {spacedChildren}
             </Container>

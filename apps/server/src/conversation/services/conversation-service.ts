@@ -1,6 +1,6 @@
 import { send } from "process";
 import { prismaClient } from "@messanger/prisma";
-import { ConversationRequest, ConversationPublic, messageSchema } from "@messanger/types";
+import { ConversationRequest, ConversationPublic, messageSchema, ListUserConversationsResponse, ProfilePublic } from "@messanger/types";
 
 
 
@@ -45,27 +45,53 @@ export class ConversationService {
         });
     }
 
-    static async getMessageById(messageId: string, userId: string): Promise<ConversationPublic> {
-        const message = await this.conversationRepository.findUniqueOrThrow({
-            where: { id: messageId },
-            include: { sender: { include: { profile: { include: { user: true } } } }, receiver: { include: { profile: { include: { user: true } } } } }
-        });
-        if (message.receiverId !== userId && message.senderId !== userId) {
-            throw new Error("Unauthorized");
-        }
-        return ConversationPublic.fromConversationToConversationPublic({ ...message, sender: message.sender.profile!, receiver: message.receiver.profile! });
-    }
 
-    static async getMessages(userId: string): Promise<ConversationPublic[]> {
-        console.log("Fetching messages for user:", userId);
+    static async getConversations(userId: string): Promise<ConversationPublic[]> {
+        // Fetch all messages where user is sender or receiver, but not to themselves
         const messages = await this.conversationRepository.findMany({
             where: {
                 OR: [
                     { senderId: userId },
-                    { receiverId: userId },
-                    { isDeletedBySender: false },
-                    { isDeletedByReceiver: false }
+                    { receiverId: userId }
+                ],
+                NOT: [
+                    { senderId: userId, receiverId: userId }
                 ]
+            },
+            orderBy: { createdAt: "desc" },
+            include: {
+                sender: { include: { profile: { include: { user: true } } } },
+                receiver: { include: { profile: { include: { user: true } } } }
+            }
+        });
+
+        // Group messages by the other participant's ID, keeping only the latest message per conversation
+        const latestMessages = new Map<string, typeof messages[0]>();
+        for (const message of messages) {
+            const participantId = message.senderId === userId ? message.receiverId : message.senderId;
+            if (!latestMessages.has(participantId)) {
+                latestMessages.set(participantId, message);
+            }
+        }
+
+        return Array.from(latestMessages.values()).map(message =>
+            ConversationPublic.fromConversationToConversationPublic({
+                ...message,
+                sender: message.sender?.profile!,
+                receiver: message.receiver?.profile!
+            })
+        );
+    }
+
+    static async getConversationBetweenUsers(userAId: string, userBId: string): Promise<ConversationPublic[]> {
+        const messages = await this.conversationRepository.findMany({
+            where: {
+                OR: [
+                    { senderId: userAId, receiverId: userBId },
+                    { senderId: userBId, receiverId: userAId }
+                ],
+                isDeletedBySender: false,
+                isDeletedByReceiver: false
             },
             orderBy: { createdAt: "asc" },
             include: {
@@ -73,13 +99,21 @@ export class ConversationService {
                 receiver: { include: { profile: { include: { user: true } } } }
             }
         });
-        return messages.map(message => {
-            const sender = message.sender;
-            const receiver = message.receiver;
-            return ConversationPublic.fromConversationToConversationPublic({ ...message, sender: sender.profile!, receiver: receiver.profile! });
-        });
-    }
 
+        if (messages.length === 0) {
+            throw new Error("No conversation found between these users.");
+        }
+
+        return messages
+            .filter(msg => msg.sender?.profile && msg.receiver?.profile)
+            .map(msg =>
+                ConversationPublic.fromConversationToConversationPublic({
+                    ...msg,
+                    sender: msg.sender.profile!,
+                    receiver: msg.receiver.profile!
+                })
+            );
+    }
     static async deleteMessage(messageId: string, userId: string): Promise<void> {
         const message = await this.conversationRepository.findUniqueOrThrow({
             where: { id: messageId },

@@ -87,6 +87,8 @@ export class AuthService {
         return RegisterResponse.fromUserAndProfile(UserPublic.fromUser(user), { ...profile, bio: biodata });
     }
 
+
+
     static logout(ctx: Context): string | number {
         return 2;
     }

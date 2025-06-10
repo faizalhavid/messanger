@@ -94,6 +94,8 @@ model Conversation {
   receiver            User    @relation("ReceivedConversations", fields: [receiverId], references: [id], onDelete: Cascade)
   isDeletedByReceiver Boolean @default(false) @map("is_deleted_by_receiver")
 
+  isRead Boolean @default(false) @map("is_read")
+
   content String @db.Text
 
   messageGroupMessages ConversationGroupMessages[]
