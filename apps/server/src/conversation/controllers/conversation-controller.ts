@@ -3,7 +3,7 @@ import { Hono } from "hono";
 import { ConversationService } from "../services/conversation-service";
 import { BaseApiResponse, PaginatedResponse } from "@messanger/types";
 import { ConversationPublic } from "@messanger/types";
-import { WsBroadcastEvent, WsEventName } from "src/websocket/websocket";
+import { WsBroadcastEvent, WsEventName } from "@messanger/types";
 import { server } from "src";
 import { randomUUID } from "crypto";
 

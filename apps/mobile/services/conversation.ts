@@ -1,4 +1,4 @@
-import { ConversationPublic, ListUserConversationsResponse, PaginatedResponse } from "@messanger/types";
+import { ConversationPublic, ConversationRequest, ListUserConversationsResponse, PaginatedResponse } from "@messanger/types";
 import axios from "./axios";
 
 
@@ -29,6 +29,21 @@ export const getConversationById = async (id: string): Promise<PaginatedResponse
         return data;
     } catch (error) {
         console.error("Error fetching conversation by ID:", error);
+        throw error;
+    }
+}
+
+export const postConversation = async (req: ConversationRequest): Promise<ConversationPublic> => {
+    try {
+        const response = await axios.post("/conversations", req);
+        console.log("Response from postConversation:", response);
+        // Todo: after implement error handling and custome server code at backend, must use 201
+        if (response.status !== 200) {
+            throw new Error("Failed to create conversation");
+        }
+        return response.data;
+    } catch (error) {
+        console.error("Error creating conversation:", error);
         throw error;
     }
 }

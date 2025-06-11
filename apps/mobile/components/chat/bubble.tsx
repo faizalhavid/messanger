@@ -16,7 +16,6 @@ export default function BubbleChat({ message, interlocutorsId }: BubbleProps) {
 
     if (!message) return null;
     const isMessageFromCurrentUser = message.sender.user.id === user?.id;
-    console.log("BubbleChat", message.isRead);
     return (
         <Surface
             style={{

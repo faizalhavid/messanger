@@ -1,7 +1,7 @@
 
 import { prismaClient } from "@messanger/prisma";
 import { randomUUID } from "crypto";
-import { WsEventName, WsBroadcastEvent } from "src/websocket/websocket";
+import { WsEventName, WsBroadcastEvent } from "@messanger/types";
 
 interface UserTestProps {
     id: string;

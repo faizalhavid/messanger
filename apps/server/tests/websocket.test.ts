@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { generateWSData, usersTest, UserTest } from "./test-utils";
-import { WsEventName } from "@/core/types/websocket";
+import { WsEventName } from "@messanger/types";
+
 
 
 describe('Message WebSocket Controller', () => {

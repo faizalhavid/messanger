@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { SafeAreaView, View, ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Alert } from 'react-native';
+import { StyleProp, ViewStyle } from 'react-native';
 
 type PaddingType = number | { top?: number; bottom?: number; left?: number; right?: number; vertical?: number; horizontal?: number };
 
@@ -13,7 +14,7 @@ type Props = {
     padding?: PaddingType;
     refreshing?: boolean;
     scrollable?: boolean;
-    style?: object;
+    style?: StyleProp<ViewStyle>;
     errorMessage?: string;
     onDismissError?: () => void;
     space?: number;

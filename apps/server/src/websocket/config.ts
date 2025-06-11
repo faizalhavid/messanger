@@ -2,7 +2,8 @@ import { createBunWebSocket } from 'hono/bun';
 import { ServerWebSocket } from 'bun';
 import { Context } from 'hono';
 import { UserService } from 'src/user/services/user-service';
-import { WsTopic, AppWSContext, WsBroadcastEvent, WsEventName } from './websocket';
+import { WsTopic, AppWSContext, WsBroadcastEvent, WsEventName } from '@messanger/types';
+;
 
 export const { upgradeWebSocket, websocket } = createBunWebSocket();
 const ALLOWED_TOPICS = [WsTopic.Conversations, WsTopic.Notifications];

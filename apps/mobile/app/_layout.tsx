@@ -11,6 +11,8 @@ import AuthProvider from '@/hooks/AuthProvider';
 import { Text, useColorScheme } from 'react-native';
 import { PaperProvider } from 'react-native-paper';
 import { rnNavigationTheme, rnPaperTheme } from '@/components/themes';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from '@/services/queryClient';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -77,15 +79,17 @@ function RootLayoutNav() {
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <PaperProvider theme={paperTheme}>
-        <AuthProvider>
-          <Stack initialRouteName="(tabs)">
-            <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-          </Stack>
-        </AuthProvider>
-      </PaperProvider>
+      <QueryClientProvider client={queryClient}>
+        <PaperProvider theme={paperTheme}>
+          <AuthProvider>
+            <Stack initialRouteName="(tabs)">
+              <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+            </Stack>
+          </AuthProvider>
+        </PaperProvider>
+      </QueryClientProvider>
     </ThemeProvider>
   );
 }
