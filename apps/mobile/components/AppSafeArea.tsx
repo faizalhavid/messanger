@@ -87,7 +87,7 @@ export default function AppSafeArea({
             <Container
                 style={[
                     styles.content,
-                    { flexDirection, alignItems, justifyContent }
+                    !scrollable && { flexDirection, alignItems, justifyContent }
                 ]}
             >
                 {spacedChildren}

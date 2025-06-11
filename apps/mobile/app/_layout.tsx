@@ -7,12 +7,13 @@ import { use, useEffect } from 'react';
 import 'react-native-reanimated';
 import React from 'react';
 import { useAuthStore } from '@/store/auth';
-import AuthProvider from '@/hooks/AuthProvider';
+import AuthProvider from '@/providers/AuthProvider';
 import { Text, useColorScheme } from 'react-native';
 import { PaperProvider } from 'react-native-paper';
 import { rnNavigationTheme, rnPaperTheme } from '@/components/themes';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '@/services/queryClient';
+import { WebSocketProvider } from '@/providers/WebSocketConnection';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -60,7 +61,7 @@ function RootLayoutNav() {
   const route = useRouter();
   const pathName = usePathname();
   const colorScheme = useColorScheme();
-  const { token, isLoading } = useAuthStore();
+  const { token, isLoading, setToken, setLoading } = useAuthStore();
   const paperTheme = rnPaperTheme[colorScheme ?? 'light'];
   const PUBLIC_ROUTES = ['/conversations', '/login', '/register', '/forgot-password'];
 
@@ -77,16 +78,19 @@ function RootLayoutNav() {
   }, [isLoading, token, pathName, route]);
 
 
+
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <QueryClientProvider client={queryClient}>
         <PaperProvider theme={paperTheme}>
-          <AuthProvider>
-            <Stack initialRouteName="(tabs)">
-              <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-              <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-            </Stack>
+          <AuthProvider credentialsState={{ token, setToken, setLoading }}>
+            <WebSocketProvider token={token}>
+              <Stack initialRouteName="(tabs)">
+                <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+              </Stack>
+            </WebSocketProvider>
           </AuthProvider>
         </PaperProvider>
       </QueryClientProvider>

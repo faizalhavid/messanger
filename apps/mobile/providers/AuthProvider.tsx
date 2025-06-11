@@ -4,10 +4,15 @@ import React, { useEffect } from "react";
 
 type Props = {
     children: React.ReactNode;
+    credentialsState: {
+        token: string | null;
+        setToken: (token: string) => void;
+        setLoading: (loading: boolean) => void;
+    }
 };
 
-const AuthProvider = ({ children }: Props) => {
-    const { token, setToken, setLoading } = useAuthStore();
+const AuthProvider = ({ children, credentialsState: authData }: Props) => {
+    const { token, setToken, setLoading } = authData;
 
     useEffect(() => {
         const bootstrap = async () => {

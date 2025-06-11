@@ -2,26 +2,30 @@ import AppSafeArea from '@/components/AppSafeArea';
 import BubbleChat from '@/components/chat/bubble';
 import Spacer from '@/components/Spacer';
 import StackWrapper from '@/components/StackWrapper';
-import { getConversationById, postConversation } from '@/services/conversation';
+import { useWebSocket } from '@/providers/WebSocketConnection';
 import { useConversationQuery, useMutationConversationQuery } from '@/services/hooks/conversationQuery';
 import { queryClient } from '@/services/queryClient';
 import { useAuthStore } from '@/store/auth';
 import { useMessageStore } from '@/store/message';
+import { MaterialIcons } from '@expo/vector-icons';
 import { ConversationPublic, ConversationRequest, messageSchema, WsEventName } from '@messanger/types';
 import { Stack, useLocalSearchParams } from 'expo-router'
-import React, { useRef } from 'react'
-import { FlatList, Keyboard, KeyboardAvoidingView, Platform, RefreshControl, TextInput, TouchableWithoutFeedback, View } from 'react-native';
-import { IconButton, Text, TextInput as TextInputPaper } from 'react-native-paper';
+import React from 'react'
+import { Button, FlatList, Keyboard, KeyboardAvoidingView, Platform, RefreshControl, TextInput, TouchableWithoutFeedback, View } from 'react-native';
+import { Avatar, Divider, IconButton, Menu, Text, TextInput as TextInputPaper } from 'react-native-paper';
 
 export default function ConversationDetail() {
     const params = useLocalSearchParams();
+    const ws = useWebSocket();
     const interlocutorId = params.id as string | undefined;
     const { data, isLoading, refetch, isRefetching } = useConversationQuery(interlocutorId);
+    const { messages, setMessages, addMessage } = useMessageStore();
     const { mutate: sendMessage, isPending, error } = useMutationConversationQuery();
-    const { user, token } = useAuthStore.getState();
+
 
     const pageState = React.useState({
         generalError: '',
+        openUpMenuHeader: false,
         message: {
             content: '',
             isRead: false,
@@ -50,9 +54,24 @@ export default function ConversationDetail() {
             return;
         }
 
+        const optimisticMessage = {
+            ...payload,
+            id: `temp-${Date.now()}`,
+            createdAt: new Date().toISOString(),
+            sender: {}, // Fill as needed
+            isRead: false,
+            receiver: {}
+        } as unknown as ConversationPublic;
+
+        addMessage(optimisticMessage);
+        queryClient.setQueryData(['conversation', interlocutorId], (old: any) => ({
+            ...old,
+            items: [...(old?.items ?? []), optimisticMessage]
+        }));
+
         sendMessage(validated.data, {
             onSuccess: (data) => {
-                useMessageStore.getState().addMessage(data);
+                addMessage(data);
                 queryClient.setQueryData(['conversation', interlocutorId], (old: any) => ({
                     ...old,
                     items: [...(old?.items ?? []), data]
@@ -61,8 +80,6 @@ export default function ConversationDetail() {
                     ...pageState[0],
                     message: { ...pageState[0].message, content: '' }
                 });
-                getUptoDateConversation();
-                refetch();
             },
             onError: (error: any) => {
                 pageState[1]({
@@ -74,41 +91,33 @@ export default function ConversationDetail() {
     }
 
     const getUptoDateConversation = () => {
-        const ws = new WebSocket(`${process.env.EXPO_PUBLIC_WEBSOCKET_URL}/topic?conversations=${interlocutorId}`);
-        const authReceiver = { event: WsEventName.Authentication, data: { token: token } };
-
-        try {
-            ws.onopen = () => {
-                console.log("WebSocket connection opened");
-                ws.send(JSON.stringify(authReceiver));
-            };
-
-            ws.onmessage = (event) => {
-                const message = JSON.parse(event.data);
+        if (!ws) return;
+        ws.onmessage = (event) => {
+            const payload = JSON.parse(event.data);
+            if (payload.event === WsEventName.ConversationCreated) {
+                const message = payload.data;
                 useMessageStore.getState().addMessage(message);
                 queryClient.setQueryData(['conversation', interlocutorId], (old: any) => ({
                     ...old,
                     items: [...(old?.items ?? []), message]
                 }));
-            };
+            }
+        };
 
-            ws.onerror = (error) => {
-                console.error("WebSocket error:", error);
-            };
-
-            ws.onclose = () => {
-                console.log("WebSocket connection closed");
-            };
-
-        } catch (error) {
-            console.error("WebSocket error:", error);
-        }
-        return () => ws.close();
+        return () => {
+            ws.onmessage = null;
+        };
     }
 
     React.useEffect(() => {
-        refetch();
-    }, [interlocutorId]);
+        if (data?.data?.items) {
+            setMessages(data.data.items);
+        }
+    }, [data, setMessages]);
+
+    React.useEffect(() => {
+        getUptoDateConversation();
+    }, [ws]);
 
     return (
         // Todo : Fix the textinput changes after keyboard dismiss
@@ -122,15 +131,40 @@ export default function ConversationDetail() {
                 errorMessage={pageState[0].generalError}
                 onDismissError={() => pageState[1]({ ...pageState[0], generalError: '' })}
                 refreshing={isRefetching}
-                flexDirection='column'
-                justifyContent='flex-start'
+                padding={{ top: 35 }}
             >
                 <Stack.Screen
                     options={{
+                        headerTransparent: true,
+                        contentStyle: { paddingTop: 50 },
+                        headerBackground: () => <View style={{ backgroundColor: 'red', height: 80 }} />,
                         header: () => (
-                            <Text style={{ fontSize: 20, fontWeight: 'bold', padding: 16 }}>
-                                Conversation Details
-                            </Text>
+                            <StackWrapper flexDirection='row' alignItems='center' justifyContent='space-between' style={{
+                                paddingHorizontal: 20, paddingVertical: 10, marginVertical: 40, backgroundColor: 'red'
+                            }}>
+                                <StackWrapper flexDirection='row' alignItems='center' space={10}>
+                                    <Avatar.Image
+                                        size={40}
+                                        source={{
+                                            uri: data?.data?.items[0].receiver.avatar || 'https://via.placeholder.com/150',
+                                        }}
+                                    />
+                                    <Text >
+                                        {data?.data?.items[0].receiver.firstName} {data?.data?.items[0].receiver.lastName}
+                                    </Text>
+                                </StackWrapper>
+                                <Menu
+                                    visible={pageState[0].openUpMenuHeader}
+                                    onDismiss={() => pageState[1]({ ...pageState[0], openUpMenuHeader: false })}
+                                    anchor={<IconButton icon={() => <MaterialIcons name="more-vert" size={24} color="black" />} onPress={() => pageState[1]({ ...pageState[0], openUpMenuHeader: true })} />
+                                    }
+                                >
+                                    <Menu.Item onPress={() => { }} title="Item 1" />
+                                    <Menu.Item onPress={() => { }} title="Item 2" />
+                                    <Divider />
+                                    <Menu.Item onPress={() => { }} title="Item 3" />
+                                </Menu>
+                            </StackWrapper>
                         ),
                     }}
                 />
@@ -149,8 +183,10 @@ export default function ConversationDetail() {
                             onRefresh={refetch}
                         />
                     }
+                    inverted
                 />
-                <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+
+                <TouchableWithoutFeedback onPress={Keyboard.dismiss} >
                     <StackWrapper
                         flexDirection='row'
                         alignItems='center'
@@ -163,10 +199,8 @@ export default function ConversationDetail() {
                             value={pageState[0].message.content}
                             label="Type a message"
                             placeholder="Enter your message"
-                            style={{ minWidth: '85%' }}
+                            style={{ minWidth: '75%' }}
                             mode="outlined"
-                            multiline
-                            numberOfLines={4}
                             textAlignVertical="top"
                             onChangeText={(text) => {
                                 pageState[1]({
@@ -196,6 +230,6 @@ export default function ConversationDetail() {
                     </StackWrapper>
                 </TouchableWithoutFeedback>
             </AppSafeArea>
-        </KeyboardAvoidingView>
+        </KeyboardAvoidingView >
     )
 }

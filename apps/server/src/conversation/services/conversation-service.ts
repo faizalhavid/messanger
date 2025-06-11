@@ -93,7 +93,7 @@ export class ConversationService {
                 isDeletedBySender: false,
                 isDeletedByReceiver: false
             },
-            orderBy: { createdAt: "asc" },
+            orderBy: { createdAt: "desc" },
             include: {
                 sender: { include: { profile: { include: { user: true } } } },
                 receiver: { include: { profile: { include: { user: true } } } }

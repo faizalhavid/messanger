@@ -88,6 +88,12 @@ function handlePayloadEvent(payload: WsBroadcastEvent, data: AppWSContext["data"
             console.log('User status change:', payload.data);
             break;
 
+        case WsEventName.ConversationCreated:
+            // Handle conversation created event
+            console.log('Conversation created:', payload.data);
+            break;
+
+
         case WsEventName.ConversationRead:
             // Handle message read event
             console.log('Conversation read:', payload.data);
