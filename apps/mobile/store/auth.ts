@@ -15,16 +15,17 @@ type AuthState = {
     setLoading: (loading: boolean) => void;
 };
 
-const saveTokenToStorage = async (token: string) => {
+const saveAuthToStorage = async (key: string, value: any) => {
     try {
-        if (!token) {
-            await AsyncStorage.removeItem('token');
+        if (value === null || value === undefined || value === '') {
+            await AsyncStorage.removeItem(key);
             return;
         }
-        console.log('Saving token to storage:', token);
-        await AsyncStorage.setItem('token', token);
+        const serialized = typeof value === 'string' ? value : JSON.stringify(value);
+        await AsyncStorage.setItem(key, serialized);
+        console.log(`Saved ${key} to storage:`, value);
     } catch (error) {
-        console.error('Error saving token to storage:', error);
+        console.error(`Error saving ${key} to storage:`, error);
     }
 };
 
@@ -34,15 +35,16 @@ export const useAuthStore = create<AuthState>((set) => ({
     isLoading: false,
     setUser: (user) => {
         set({ user, isLoading: false });
+        saveAuthToStorage('user', user);
     },
     setToken: (token) => {
-        console.log('Setting token:', token);
         set({ token, isLoading: false });
-        saveTokenToStorage(token);
+        saveAuthToStorage('token', token)
     },
     logout: () => {
         set({ token: null, user: null });
-        saveTokenToStorage('');
+        saveAuthToStorage('token', '');
+        saveAuthToStorage('user', '');
     },
     isAuthenticated: (): boolean => {
         const state = useAuthStore.getState();

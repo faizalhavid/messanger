@@ -83,12 +83,12 @@ export class ConversationService {
         );
     }
 
-    static async getConversationBetweenUsers(userAId: string, userBId: string): Promise<ConversationPublic[]> {
+    static async getConversationBetweenUsers(authenticatedUser: string, interlocutorUser: string): Promise<ConversationPublic[]> {
         const messages = await this.conversationRepository.findMany({
             where: {
                 OR: [
-                    { senderId: userAId, receiverId: userBId },
-                    { senderId: userBId, receiverId: userAId }
+                    { senderId: authenticatedUser, receiverId: interlocutorUser },
+                    { senderId: interlocutorUser, receiverId: authenticatedUser }
                 ],
                 isDeletedBySender: false,
                 isDeletedByReceiver: false

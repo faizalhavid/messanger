@@ -8,7 +8,7 @@ import 'react-native-reanimated';
 import React from 'react';
 import { useAuthStore } from '@/store/auth';
 import AuthProvider from '@/providers/AuthProvider';
-import { Text, useColorScheme } from 'react-native';
+import { ActivityIndicator, Text, useColorScheme, View } from 'react-native';
 import { PaperProvider } from 'react-native-paper';
 import { rnNavigationTheme, rnPaperTheme } from '@/components/themes';
 import { QueryClientProvider } from '@tanstack/react-query';
@@ -61,19 +61,28 @@ function RootLayoutNav() {
   const route = useRouter();
   const pathName = usePathname();
   const colorScheme = useColorScheme();
-  const { token, isLoading, setToken, setLoading } = useAuthStore();
+  const { user, token, isLoading, setToken, setUser, setLoading } = useAuthStore();
   const paperTheme = rnPaperTheme[colorScheme ?? 'light'];
   const PUBLIC_ROUTES = ['/conversations', '/login', '/register', '/forgot-password'];
 
   if (isLoading) {
-    return <Text>Loading...</Text>;
+    return <View style={{
+      backgroundColor: 'rgba(255,255,255,0.6)',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 10,
+    }}>
+      <ActivityIndicator size="large" color="#075E54" />
+    </View>
   }
   React.useEffect(() => {
-    console.log('Pathname:', pathName);
-    const isAuthenticated = !token && !PUBLIC_ROUTES.includes(pathName);
-    console.log("Is Authenticated:", isAuthenticated, isLoading);
-    if (!isLoading && !token && !PUBLIC_ROUTES.includes(pathName)) {
+
+    if (!isLoading && (!token || token === '' || token == null) && !PUBLIC_ROUTES.includes(pathName)) {
       route.replace('/(auth)/login');
+    }
+
+    if (!isLoading && token && pathName === '/login') {
+      route.replace('/conversations');
     }
   }, [isLoading, token, pathName, route]);
 
@@ -83,8 +92,8 @@ function RootLayoutNav() {
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <QueryClientProvider client={queryClient}>
         <PaperProvider theme={paperTheme}>
-          <AuthProvider credentialsState={{ token, setToken, setLoading }}>
-            <WebSocketProvider token={token}>
+          <AuthProvider credentialsState={{ token, user, setUser, setToken, setLoading }}>
+            <WebSocketProvider token={token} user={user!}>
               <Stack initialRouteName="(tabs)">
                 <Stack.Screen name="(auth)" options={{ headerShown: false }} />
                 <Stack.Screen name="(tabs)" options={{ headerShown: false }} />

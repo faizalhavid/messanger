@@ -1,4 +1,4 @@
-import { HonoContext, ListUserConversationsResponse } from "@messanger/types";
+import { HonoContext, ListUserConversationsResponse, WsTopic } from "@messanger/types";
 import { Hono } from "hono";
 import { ConversationService } from "../services/conversation-service";
 import { BaseApiResponse, PaginatedResponse } from "@messanger/types";
@@ -8,7 +8,7 @@ import { server } from "src";
 import { randomUUID } from "crypto";
 
 export const conversationController = new Hono<{ Variables: HonoContext }>();
-const topic = "conversation";
+
 
 
 conversationController.get("/", async (c) => {
@@ -40,9 +40,9 @@ conversationController.get("/", async (c) => {
 });
 
 conversationController.get("/:id", async (c) => {
-    const userA = c.get("authenticatedUser");
-    const userB = c.req.param("id");
-    const message = await ConversationService.getConversationBetweenUsers(userA.id, userB);
+    const authenticatedUser = c.get("authenticatedUser");
+    const interlocutorUserId = c.req.param("id");
+    const message = await ConversationService.getConversationBetweenUsers(authenticatedUser.id, interlocutorUserId);
 
     const response: PaginatedResponse<ConversationPublic> = {
         success: true,
@@ -76,7 +76,8 @@ conversationController.post("/", async (c) => {
         message: "Message sent successfully",
         data: result,
     };
-    server.publish(topic, JSON.stringify(broadcastPayload));
+    server.publish(WsTopic.Conversations, JSON.stringify(broadcastPayload));
+    console.log("Broadcasting message to topic:", WsTopic.Conversations, "Payload:", broadcastPayload);
     return c.json(response);
 });
 
@@ -89,7 +90,7 @@ conversationController.delete("/:id", async (c) => {
     );
     await ConversationService.deleteMessage(messageId, user.id);
 
-    server.publish(topic, JSON.stringify(broadcastPayload));
+    server.publish(WsTopic.Conversations, JSON.stringify(broadcastPayload));
 
     const response: BaseApiResponse = {
         success: true,

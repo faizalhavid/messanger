@@ -12,7 +12,7 @@ import { useAuthStore } from '@/store/auth';
 
 
 
-export default function TabOneScreen() {
+export default function Conversations() {
   const router = useRouter();
   let unReadCount = 0;
   const { user } = useAuthStore();
@@ -66,14 +66,19 @@ export default function TabOneScreen() {
         keyExtractor={(item) => item.id || ''}
         renderItem={({ item }) => {
           unReadCount = item.isRead ? 0 : (unReadCount + 1);
-          const anotherUser = user?.id === item.sender.user.id ? item.receiver : item.sender;
+          console.log('id', user?.id)
+          const interlocutor =
+            user?.id == item.sender.user.id
+              ? item.receiver
+              : item.sender;
           return (
             (
               <ConversationListItem
                 sender={item.sender}
                 onPress={() => {
+                  console.log("Selected conversation", interlocutor);
                   if (item.id) {
-                    router.push({ pathname: "/conversations/[id]", params: { id: anotherUser.user.id } });
+                    router.push({ pathname: "/conversations/[id]", params: { id: interlocutor.user.id } });
                   }
                 }}
                 unreadCount={unReadCount}

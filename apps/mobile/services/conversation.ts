@@ -5,7 +5,12 @@ import axios from "./axios";
 export const getConversations = async (): Promise<PaginatedResponse<ConversationPublic>> => {
     try {
         const response = await axios.get("/conversations");
-        console.log("Response from getConversations:", response);
+        console.log("Response from getConversations:", response.data);
+        if (response.data?.items) {
+            response.data.items.forEach((item: ConversationPublic, idx: number) => {
+                console.log(`Item ${idx}:`, item);
+            });
+        }
         if (response.status !== 200) {
             throw new Error("Failed to fetch messages");
         }
@@ -21,7 +26,7 @@ export const getConversations = async (): Promise<PaginatedResponse<Conversation
 export const getConversationById = async (id: string): Promise<PaginatedResponse<ConversationPublic>> => {
     try {
         const response = await axios.get(`/conversations/${id}`);
-        console.log("Response from getConversationById:", response);
+        //console.log("Response from getConversationById:", response);
         if (response.status !== 200) {
             throw new Error("Failed to fetch conversation");
         }
@@ -36,7 +41,7 @@ export const getConversationById = async (id: string): Promise<PaginatedResponse
 export const postConversation = async (req: ConversationRequest): Promise<ConversationPublic> => {
     try {
         const response = await axios.post("/conversations", req);
-        console.log("Response from postConversation:", response);
+        //console.log("Response from postConversation:", response);
         // Todo: after implement error handling and custome server code at backend, must use 201
         if (response.status !== 200) {
             throw new Error("Failed to create conversation");

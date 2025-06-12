@@ -5,6 +5,7 @@ import StackWrapper from '@/components/StackWrapper';
 import { useWebSocket } from '@/providers/WebSocketConnection';
 import { useConversationQuery, useMutationConversationQuery } from '@/services/hooks/conversationQuery';
 import { queryClient } from '@/services/queryClient';
+import { conversationKeys } from '@/services/queryKeys';
 import { useAuthStore } from '@/store/auth';
 import { useMessageStore } from '@/store/message';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -19,8 +20,8 @@ export default function ConversationDetail() {
     const ws = useWebSocket();
     const interlocutorId = params.id as string | undefined;
     const { data, isLoading, refetch, isRefetching } = useConversationQuery(interlocutorId);
-    const { messages, setMessages, addMessage } = useMessageStore();
-    const { mutate: sendMessage, isPending, error } = useMutationConversationQuery();
+    // const { messages, setMessages, addMessage } = useMessageStore();
+    const { mutate: sendMessage, isPending, error } = useMutationConversationQuery(interlocutorId);
 
 
     const pageState = React.useState({
@@ -54,28 +55,24 @@ export default function ConversationDetail() {
             return;
         }
 
-        const optimisticMessage = {
-            ...payload,
-            id: `temp-${Date.now()}`,
-            createdAt: new Date().toISOString(),
-            sender: {}, // Fill as needed
-            isRead: false,
-            receiver: {}
-        } as unknown as ConversationPublic;
+        // addMessage(optimisticMessage);
 
-        addMessage(optimisticMessage);
-        queryClient.setQueryData(['conversation', interlocutorId], (old: any) => ({
-            ...old,
-            items: [...(old?.items ?? []), optimisticMessage]
-        }));
 
         sendMessage(validated.data, {
             onSuccess: (data) => {
-                addMessage(data);
-                queryClient.setQueryData(['conversation', interlocutorId], (old: any) => ({
-                    ...old,
-                    items: [...(old?.items ?? []), data]
-                }));
+                console.log("Message sent successfully", data);
+                queryClient.setQueryData(conversationKeys.detail(interlocutorId ?? ''), (old: any) => {
+                    console.log("Old data", old);
+                    const items = old?.data?.items ?? [];
+                    return {
+                        ...old,
+                        data: {
+                            ...(old?.data ?? {}),
+                            items: [...items, data],
+                        }
+                    };
+                });
+                // queryClient.invalidateQueries({ queryKey: conversationKeys.detail(interlocutorId!) });
                 pageState[1]({
                     ...pageState[0],
                     message: { ...pageState[0].message, content: '' }
@@ -90,34 +87,29 @@ export default function ConversationDetail() {
         });
     }
 
-    const getUptoDateConversation = () => {
-        if (!ws) return;
-        ws.onmessage = (event) => {
-            const payload = JSON.parse(event.data);
-            if (payload.event === WsEventName.ConversationCreated) {
-                const message = payload.data;
-                useMessageStore.getState().addMessage(message);
-                queryClient.setQueryData(['conversation', interlocutorId], (old: any) => ({
-                    ...old,
-                    items: [...(old?.items ?? []), message]
-                }));
-            }
-        };
+    // const getUptoDateConversation = () => {
+    //     if (!ws) return;
+    //     ws.onmessage = (event) => {
+    //         console.log("WebSocket message received:", event);
+    //         const payload = JSON.parse(event.data);
+    //         if (payload.event === WsEventName.ConversationCreated) {
+    //             const newMessage = payload.data;
+    //             useMessageStore.getState().addMessage(newMessage);
+    //             queryClient.setQueryData(['conversation', interlocutorId], (old: any) => ({
+    //                 ...old,
+    //                 items: [...(old?.items ?? []), newMessage]
+    //             }));
+    //         }
+    //     };
 
-        return () => {
-            ws.onmessage = null;
-        };
-    }
+    //     return () => {
+    //         ws.onmessage = null;
+    //     };
+    // }
 
-    React.useEffect(() => {
-        if (data?.data?.items) {
-            setMessages(data.data.items);
-        }
-    }, [data, setMessages]);
-
-    React.useEffect(() => {
-        getUptoDateConversation();
-    }, [ws]);
+    // React.useEffect(() => {
+    //     getUptoDateConversation();
+    // }, [ws]);
 
     return (
         // Todo : Fix the textinput changes after keyboard dismiss
@@ -146,11 +138,11 @@ export default function ConversationDetail() {
                                     <Avatar.Image
                                         size={40}
                                         source={{
-                                            uri: data?.data?.items[0].receiver.avatar || 'https://via.placeholder.com/150',
+                                            uri: data?.[0]?.receiver?.avatar || 'https://via.placeholder.com/150',
                                         }}
                                     />
                                     <Text >
-                                        {data?.data?.items[0].receiver.firstName} {data?.data?.items[0].receiver.lastName}
+                                        {data?.[0]?.receiver?.firstName} {data?.[0]?.receiver?.lastName}
                                     </Text>
                                 </StackWrapper>
                                 <Menu
@@ -170,7 +162,7 @@ export default function ConversationDetail() {
                 />
 
                 <FlatList
-                    data={data?.data?.items ?? []}
+                    data={Array.isArray(data) ? data : []}
                     style={{ height: '90%' }}
                     keyExtractor={(item) => item.id}
                     renderItem={({ item }) => (
@@ -185,7 +177,7 @@ export default function ConversationDetail() {
                     }
                     inverted
                 />
-
+                <Button title='celar cache' onPress={() => queryClient.clear()} />
                 <TouchableWithoutFeedback onPress={Keyboard.dismiss} >
                     <StackWrapper
                         flexDirection='row'
@@ -227,6 +219,7 @@ export default function ConversationDetail() {
                             }}
                             style={{ alignSelf: 'flex-end', marginRight: 16 }}
                         />
+
                     </StackWrapper>
                 </TouchableWithoutFeedback>
             </AppSafeArea>

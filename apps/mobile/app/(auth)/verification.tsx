@@ -51,7 +51,7 @@ export default function Verifications() {
             const response = await postVerification(data);
             if (response.success) {
                 // Handle successful verification, e.g., navigate to the main app screen
-                router.push('/(tabs)');
+                router.push('/(auth)/login');
             } else {
                 pageState[1]({
                     ...pageState[0],

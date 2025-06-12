@@ -9,7 +9,7 @@ export const { upgradeWebSocket, websocket } = createBunWebSocket();
 const ALLOWED_TOPICS = [WsTopic.Conversations, WsTopic.Notifications];
 
 export const webSocketConfig = upgradeWebSocket(async (c: Context) => {
-    const topic = (c.req.query('topic') || 'conversation') as WsTopic; // example url: /ws?topic=conversation, /ws?topic=notifications
+    const topic = (c.req.query('topic') || WsTopic.Conversations) as WsTopic;
     if (!ALLOWED_TOPICS.includes(topic)) {
         return rejectConnection(4000, `Invalid topic: ${topic}. Allowed topics are: ${ALLOWED_TOPICS.join(', ')}`);
     }
@@ -23,14 +23,16 @@ export const webSocketConfig = upgradeWebSocket(async (c: Context) => {
         async onMessage(evt, ws: AppWSContext) {
             const rawWs = ws.raw as ServerWebSocket;
             let payload: WsBroadcastEvent;
+            console.log("On Message1")
             try {
                 payload = JSON.parse(evt.data as string) as WsBroadcastEvent;
             } catch (e) {
                 ws.close(4003, "Invalid message format");
                 return;
             }
-
+            console.log("On Message2", ws.data?.isAuthenticated)
             if (!ws.data?.isAuthenticated) {
+                console.log("On Message3", payload.event, payload.data)
                 if (payload.event === WsEventName.Authentication && payload.data?.token) {
                     try {
                         const user = await UserService.getUser(payload.data.token);
@@ -51,7 +53,8 @@ export const webSocketConfig = upgradeWebSocket(async (c: Context) => {
                     return;
                 }
             }
-            // Setelah autentikasi, handle event lain seperti biasa
+
+            console.log("On Message4", payload.event)
             if (payload.event && payload.data) {
                 handlePayloadEvent(payload, ws.data);
                 rawWs.publish(topic, JSON.stringify(payload));
