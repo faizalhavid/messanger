@@ -1,4 +1,5 @@
 import { useAuthStore } from "@/store/auth";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 
 const instance = axios.create({
@@ -19,12 +20,19 @@ instance.interceptors.request.use((config) => {
 
 instance.interceptors.response.use(
     (response) => response,
-    (error) => {
+    async (error) => {
         // Handle errors globally
 
         console.error("Axios error:", error);
         if (error.response && error.response.status === 401) {
             // Optionally handle un(auth)orized access, e.g., redirect to login
+
+        }
+        if (error.response && error.status === 403) {
+            // Optionally handle forbidden access, e.g., show a message:
+            console.error("Forbidden access:", error.response.data);
+            await AsyncStorage.removeItem('token');
+            await useAuthStore.getState().logout();
 
         }
         if (error.config && error.config.url) {

@@ -19,13 +19,26 @@ export function useMutationConversationQuery(interlocutorId?: string) {
         onMutate: async (newConversation) => {
             await queryClient.cancelQueries({ queryKey: ['messages', interlocutorId] });
             const previousConversation = queryClient.getQueryData(conversationKeys.detail(interlocutorId ?? ''));
+            console.log("Previous conversation data:", previousConversation);
             queryClient.setQueryData(conversationKeys.detail(interlocutorId ?? ''), (old: any) => {
-                return [...(old || []), newConversation];
+
+                if (old && old.data && Array.isArray(old.data.items)) {
+                    return {
+                        ...old,
+                        data: {
+                            ...old.data,
+                            items: [...old.data.items, newConversation]
+                        }
+                    };
+                }
+                return {
+                    data: { items: [newConversation] },
+                    meta: {},
+                    message: '',
+                    success: true
+                };
             });
             return { previousConversation };
-        },
-        onError: (err, newConversation, context) => {
-            queryClient.setQueryData(conversationKeys.detail(interlocutorId ?? ''), context?.previousConversation);
         },
         mutationFn: (newConversation: ConversationRequest) => postConversation(newConversation),
         onSettled: () => {

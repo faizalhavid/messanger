@@ -2,12 +2,9 @@ import AppSafeArea from '@/components/AppSafeArea';
 import BubbleChat from '@/components/chat/bubble';
 import Spacer from '@/components/Spacer';
 import StackWrapper from '@/components/StackWrapper';
-import { useWebSocket } from '@/providers/WebSocketConnection';
+import { appColors } from '@/components/themes/colors';
 import { useConversationQuery, useMutationConversationQuery } from '@/services/hooks/conversationQuery';
-import { queryClient } from '@/services/queryClient';
-import { conversationKeys } from '@/services/queryKeys';
 import { useAuthStore } from '@/store/auth';
-import { useMessageStore } from '@/store/message';
 import { MaterialIcons } from '@expo/vector-icons';
 import { ConversationPublic, ConversationRequest, messageSchema, WsEventName } from '@messanger/types';
 import { Stack, useLocalSearchParams } from 'expo-router'
@@ -17,13 +14,10 @@ import { Avatar, Divider, IconButton, Menu, Text, TextInput as TextInputPaper } 
 
 export default function ConversationDetail() {
     const params = useLocalSearchParams();
-    const ws = useWebSocket();
     const interlocutorId = params.id as string | undefined;
     const { data, isLoading, refetch, isRefetching } = useConversationQuery(interlocutorId);
-    // const { messages, setMessages, addMessage } = useMessageStore();
     const { mutate: sendMessage, isPending, error } = useMutationConversationQuery(interlocutorId);
-
-
+    const { user } = useAuthStore();
     const pageState = React.useState({
         generalError: '',
         openUpMenuHeader: false,
@@ -54,24 +48,9 @@ export default function ConversationDetail() {
             });
             return;
         }
-
-        // addMessage(optimisticMessage);
-
-
-        sendMessage(validated.data, {
+        sendMessage(validated.data as ConversationRequest, {
             onSuccess: (data) => {
                 console.log("Message sent successfully", data);
-                queryClient.setQueryData(conversationKeys.detail(interlocutorId ?? ''), (old: any) => {
-                    console.log("Old data", old);
-                    const items = old?.data?.items ?? [];
-                    return {
-                        ...old,
-                        data: {
-                            ...(old?.data ?? {}),
-                            items: [...items, data],
-                        }
-                    };
-                });
                 // queryClient.invalidateQueries({ queryKey: conversationKeys.detail(interlocutorId!) });
                 pageState[1]({
                     ...pageState[0],
@@ -86,31 +65,6 @@ export default function ConversationDetail() {
             }
         });
     }
-
-    // const getUptoDateConversation = () => {
-    //     if (!ws) return;
-    //     ws.onmessage = (event) => {
-    //         console.log("WebSocket message received:", event);
-    //         const payload = JSON.parse(event.data);
-    //         if (payload.event === WsEventName.ConversationCreated) {
-    //             const newMessage = payload.data;
-    //             useMessageStore.getState().addMessage(newMessage);
-    //             queryClient.setQueryData(['conversation', interlocutorId], (old: any) => ({
-    //                 ...old,
-    //                 items: [...(old?.items ?? []), newMessage]
-    //             }));
-    //         }
-    //     };
-
-    //     return () => {
-    //         ws.onmessage = null;
-    //     };
-    // }
-
-    // React.useEffect(() => {
-    //     getUptoDateConversation();
-    // }, [ws]);
-
     return (
         // Todo : Fix the textinput changes after keyboard dismiss
         <KeyboardAvoidingView
@@ -129,10 +83,10 @@ export default function ConversationDetail() {
                     options={{
                         headerTransparent: true,
                         contentStyle: { paddingTop: 50 },
-                        headerBackground: () => <View style={{ backgroundColor: 'red', height: 80 }} />,
+                        headerBackground: () => <View style={{ backgroundColor: appColors.Green, height: 80 }} />,
                         header: () => (
                             <StackWrapper flexDirection='row' alignItems='center' justifyContent='space-between' style={{
-                                paddingHorizontal: 20, paddingVertical: 10, marginVertical: 40, backgroundColor: 'red'
+                                paddingHorizontal: 20, paddingVertical: 10, marginVertical: 40, backgroundColor: appColors.Green
                             }}>
                                 <StackWrapper flexDirection='row' alignItems='center' space={10}>
                                     <Avatar.Image
@@ -161,12 +115,13 @@ export default function ConversationDetail() {
                     }}
                 />
 
+
                 <FlatList
-                    data={Array.isArray(data) ? data : []}
+                    data={data ?? []}
                     style={{ height: '90%' }}
-                    keyExtractor={(item) => item.id}
+                    keyExtractor={(item, idx) => item.id ?? `temp-${idx}`}
                     renderItem={({ item }) => (
-                        <BubbleChat message={item} interlocutorsId={interlocutorId} />
+                        <BubbleChat message={item} interlocutorsId={interlocutorId} authenticatedUser={user ?? undefined} />
                     )}
                     ItemSeparatorComponent={() => <Spacer size={{ height: 8 }} />}
                     refreshControl={
@@ -177,7 +132,7 @@ export default function ConversationDetail() {
                     }
                     inverted
                 />
-                <Button title='celar cache' onPress={() => queryClient.clear()} />
+
                 <TouchableWithoutFeedback onPress={Keyboard.dismiss} >
                     <StackWrapper
                         flexDirection='row'

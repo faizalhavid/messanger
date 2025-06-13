@@ -15,7 +15,7 @@ type WebSocketProviderProps = {
 export const WebSocketProvider = ({ token, user, children }: WebSocketProviderProps) => {
     const wsRef = useRef<WebSocket | null>(null);
     useEffect(() => {
-        if (!token) return;
+        if (!token && !user) return;
         const ws = new WebSocket(`${process.env.EXPO_PUBLIC_WEBSOCKET_URL}?topic=${WsTopic.Conversations}`);
         wsRef.current = ws;
         ws.onopen = () => ws.send(JSON.stringify({ event: WsEventName.Authentication, data: { token } }));
@@ -23,21 +23,28 @@ export const WebSocketProvider = ({ token, user, children }: WebSocketProviderPr
             const payload = JSON.parse(event.data);
             console.log("WebSocket message received:", payload);
             if (payload.event === WsEventName.ConversationCreated) {
-                const interlocutorId = user.id === payload.data.senderId ? payload.data.receiverId : payload.data.senderId;
+                const interlocutorId = user.id === payload.data.sender.user.id ? payload.data.receiver.user.id : payload.data.sender.user.id;
                 const newMessage = payload.data as ConversationPublic;
+                const oldData = queryClient.getQueryData(conversationKeys.detail(interlocutorId ?? ''));
                 queryClient.setQueryData(conversationKeys.detail(interlocutorId ?? ''), (old: any) => {
-                    console.log("Old data", old);
-                    const items = old?.data?.items ?? [];
+                    if (old && old.data && Array.isArray(old.data.items)) {
+                        return {
+                            ...old,
+                            data: {
+                                ...old.data,
+                                items: [...old.data.items, newMessage]
+                            }
+                        };
+                    }
                     return {
-                        ...old,
-                        data: {
-                            ...(old?.data ?? {}),
-                            items: [...items, newMessage],
-                        }
+                        data: { items: [newMessage] },
+                        meta: {},
+                        message: '',
+                        success: true
                     };
                 });
+                console.log("Old messages 2 from query cache:", oldData);
                 //queryClient.invalidateQueries({ queryKey: conversationKeys.detail(interlocutorId) });
-
             }
         };
         ws.onerror = (error) => {
