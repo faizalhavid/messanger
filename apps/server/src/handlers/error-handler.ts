@@ -1,8 +1,14 @@
+import { logger } from '@messanger/logging';
 import { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { ZodError } from 'zod';
 
 export const errorHandler = (err: unknown, c: Context) => {
+    logger.error(
+        typeof err === "object" && err !== null && "message" in err
+            ? (err as any).message
+            : String(err)
+    );
     if (err instanceof HTTPException) {
         c.status(err.status)
         return c.json({

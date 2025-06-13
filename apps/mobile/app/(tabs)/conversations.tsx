@@ -1,6 +1,6 @@
 import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
 import React, { useEffect } from 'react';
-import { Divider, Text } from 'react-native-paper';
+import { Appbar, Divider, Text } from 'react-native-paper';
 import AppSafeArea from '@/components/AppSafeArea';
 import BubbleChat from '@/components/chat/bubble';
 import ConversationListItem from '@/components/chat/conversation-list-item';
@@ -9,6 +9,7 @@ import { ConversationPublic, ListUserConversationsResponse } from '@messanger/ty
 import { getConversations } from '@/services/conversation';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthStore } from '@/store/auth';
+import SpeedDial from '@/components/SpeedDial';
 
 
 
@@ -21,6 +22,7 @@ export default function Conversations() {
     refreshing: false,
     showPassword: false,
     disableButtonSubmit: false,
+    isSpeedDialExtended: true,
     generalError: '',
     conversations: [] as ConversationPublic[]
   });
@@ -51,6 +53,15 @@ export default function Conversations() {
     retrieveConversations();
   }, []);
 
+  const handleSearch = () => {
+    console.log("Search pressed");
+    // Implement search functionality here
+  };
+
+  const handleMore = () => {
+    console.log("More options pressed");
+    // Implement more options functionality here
+  };
 
   return (
     <AppSafeArea
@@ -60,6 +71,11 @@ export default function Conversations() {
       refreshing={pageState[0].refreshing}
       padding={{ top: 12, left: 0, right: 0 }}
     >
+      <Appbar.Header>
+        <Appbar.Content title="Messages" />
+        <Appbar.Action icon="magnify" onPress={handleSearch} />
+        <Appbar.Action icon="dots-vertical" onPress={handleMore} />
+      </Appbar.Header>
       <FlatList
         data={pageState[0].conversations}
         style={{ minHeight: '100%' }}
@@ -102,24 +118,18 @@ export default function Conversations() {
             : null
         }
       />
+      <SpeedDial
+        visible={true}
+        extended={pageState[0].isSpeedDialExtended}
+        label="New Message"
+        animateFrom="right"
+        iconMode="static"
+        icon="plus"
+        onPress={() => {
+          console.log("New conversation pressed");
+          router.push('/conversations/new');
+        }}
+      />
     </AppSafeArea>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-    backgroundColor: '#fff',
-  },
-  messageItem: {
-    padding: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
-  },
-  errorText: {
-    color: 'red',
-    textAlign: 'center',
-    marginTop: 20,
-  },
-});

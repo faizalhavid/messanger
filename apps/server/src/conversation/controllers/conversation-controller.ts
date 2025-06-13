@@ -1,4 +1,4 @@
-import { HonoContext, ListUserConversationsResponse, WsTopic } from "@messanger/types";
+import { ConversationQueryParams, HonoContext, ListUserConversationsResponse, WsTopic } from "@messanger/types";
 import { Hono } from "hono";
 import { ConversationService } from "../services/conversation-service";
 import { BaseApiResponse, PaginatedResponse } from "@messanger/types";
@@ -13,30 +13,38 @@ export const conversationController = new Hono<{ Variables: HonoContext }>();
 
 conversationController.get("/", async (c) => {
     const user = c.get("authenticatedUser");
-    console.log("Fetching messages for user:", user);
-    const messages = await ConversationService.getConversations(user.id);
+    const queryParams = c.req.query();
+    const { items, meta } = await ConversationService.getConversations(user.id, queryParams);
 
-    const page = 1;
-    const pageSize = messages.length;
-    const totalItems = messages.length;
-    const totalPages = 1;
-
-    const paginationResponse: PaginatedResponse<ConversationPublic> = {
+    const response: PaginatedResponse<ConversationPublic> = {
         success: true,
         message: "Messages retrieved successfully",
+        data: { items, meta }
+    };
+    return c.json(response);
+});
+conversationController.get("/:id", async (c) => {
+    const authenticatedUser = c.get("authenticatedUser");
+    const interlocutorUserId = c.req.param("id");
+    const messages = await ConversationService.getConversationBetweenUsers(authenticatedUser.id, interlocutorUserId);
+
+    const response: PaginatedResponse<ConversationPublic> = {
+        success: true,
+        message: "Message retrieved successfully",
         data: {
             items: messages,
             meta: {
-                totalItems,
-                totalPages,
-                page,
-                pageSize,
+                totalItems: messages.length,
+                totalPages: 1,
+                page: 1,
+                pageSize: messages.length,
                 hasNextPage: false,
                 hasPreviousPage: false
             }
         }
     };
-    return c.json(paginationResponse);
+
+    return c.json(response);
 });
 
 conversationController.get("/:id", async (c) => {

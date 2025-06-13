@@ -74,7 +74,7 @@ model Biodata {
 
   birthDate DateTime @map("birth_date")
   gender    String   @map("gender") @db.VarChar(10)
-  phone     String   @map("phone") @db.VarChar(20)
+  phone     String   @unique @map("phone") @db.VarChar(20)
   address   String   @map("address") @db.VarChar(255)
 
   Profile Profile[]

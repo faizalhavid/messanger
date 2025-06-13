@@ -1,6 +1,6 @@
 import { send } from "process";
 import { prismaClient } from "@messanger/prisma";
-import { ConversationRequest, ConversationPublic, messageSchema, ListUserConversationsResponse, ProfilePublic } from "@messanger/types";
+import { ConversationRequest, ConversationPublic, messageSchema, ConversationQueryParams, PaginatedResponse, PaginatedData } from "@messanger/types";
 
 
 
@@ -45,27 +45,49 @@ export class ConversationService {
         });
     }
 
+    static async getConversations(userId: string, queryParams: ConversationQueryParams): Promise<PaginatedData<ConversationPublic>> {
+        console.log("Fetching conversations for user:", userId, "with query params:", queryParams);
+        const { sortBy = "createdAt", sortOrder = "desc", page = 1, pageSize = 10, search, ...rest } = queryParams;
+        const skip = (page - 1) * pageSize;
+        const take = pageSize;
 
-    static async getConversations(userId: string): Promise<ConversationPublic[]> {
-        // Fetch all messages where user is sender or receiver, but not to themselves
-        const messages = await this.conversationRepository.findMany({
-            where: {
-                OR: [
-                    { senderId: userId },
-                    { receiverId: userId }
-                ],
-                NOT: [
-                    { senderId: userId, receiverId: userId }
-                ]
-            },
-            orderBy: { createdAt: "desc" },
-            include: {
-                sender: { include: { profile: { include: { user: true } } } },
-                receiver: { include: { profile: { include: { user: true } } } }
-            }
-        });
+        const where: any = {
+            AND: [
+                {
+                    OR: [
+                        { senderId: userId },
+                        { receiverId: userId }
+                    ]
+                },
+                { NOT: [{ senderId: userId, receiverId: userId }] }
+            ]
+        };
 
-        // Group messages by the other participant's ID, keeping only the latest message per conversation
+        if (search) {
+            where.AND.push({
+                content: { contains: search, mode: "insensitive" }
+            });
+        }
+        Object.assign(where, rest);
+
+        const orderBy: any = {};
+        orderBy[sortBy] = sortOrder;
+
+        const [messages, totalItems] = await Promise.all([
+            prismaClient.conversation.findMany({
+                where,
+                orderBy,
+                skip,
+                take,
+                include: {
+                    sender: { include: { profile: { include: { user: true } } } },
+                    receiver: { include: { profile: { include: { user: true } } } }
+                }
+            }),
+            prismaClient.conversation.count({ where })
+        ]);
+
+
         const latestMessages = new Map<string, typeof messages[0]>();
         for (const message of messages) {
             const participantId = message.senderId === userId ? message.receiverId : message.senderId;
@@ -74,13 +96,24 @@ export class ConversationService {
             }
         }
 
-        return Array.from(latestMessages.values()).map(message =>
-            ConversationPublic.fromConversationToConversationPublic({
-                ...message,
-                sender: message.sender?.profile!,
-                receiver: message.receiver?.profile!
-            })
-        );
+        return {
+
+            items: messages.map(message =>
+                ConversationPublic.fromConversationToConversationPublic({
+                    ...message,
+                    sender: message.sender?.profile!,
+                    receiver: message.receiver?.profile!
+                })
+            ),
+            meta: {
+                totalItems,
+                totalPages: Math.ceil(totalItems / pageSize),
+                page,
+                pageSize,
+                hasNextPage: page < Math.ceil(totalItems / pageSize),
+                hasPreviousPage: page > 1
+            }
+        };
     }
 
     static async getConversationBetweenUsers(authenticatedUser: string, interlocutorUser: string): Promise<ConversationPublic[]> {
@@ -114,6 +147,7 @@ export class ConversationService {
                 })
             );
     }
+
     static async deleteMessage(messageId: string, userId: string): Promise<void> {
         const message = await this.conversationRepository.findUniqueOrThrow({
             where: { id: messageId },

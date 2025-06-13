@@ -29,22 +29,8 @@ export default function TabLayout() {
       <Tabs.Screen
         name="conversations"
         options={{
-          title: 'Messages',
           tabBarIcon: ({ color }) => <FontAwesome name="envelope" color={color} size={28} />,
-          headerRight: () => (
-            <Link href="/modal" asChild>
-              <Pressable>
-                {({ pressed }) => (
-                  <FontAwesome
-                    name="info-circle"
-                    size={25}
-                    // color={themes[colorScheme ?? 'light'].text}
-                    style={{ marginRight: 15, opacity: pressed ? 0.5 : 1 }}
-                  />
-                )}
-              </Pressable>
-            </Link>
-          ),
+          headerShown: false,
         }}
       />
       <Tabs.Screen

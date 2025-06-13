@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from "bun:test";
 import { ConversationTest, ProfileTest, usersTest, UserTest } from "./test-utils";
-import { WsEventName } from "src/websocket/websocket";
+import { WsEventName } from "@messanger/types";
 
 
 
@@ -73,6 +73,78 @@ describe('GET Conversation', () => {
         expect(body.success).toBe(true);
         expect(body.data).toBeDefined();
     });
+
+    it("should show search result conversations", async () => {
+        const response = await fetch('http://localhost:3000/api/conversations?search=Hello', {
+            method: 'GET',
+            headers: { 'Authorization': usersTest[0].token }
+        });
+        console.log('Get conversations response status:', response);
+        const body = await response.json();
+        console.log('Get conversations response:', body);
+
+        expect(response.status).toBe(200);
+        expect(body.success).toBe(true);
+        expect(body.data).toBeDefined();
+    });
+
+    it("should show conversations with pagination", async () => {
+        const response = await fetch('http://localhost:3000/api/conversations?page=1&pageSize=2', {
+            method: 'GET',
+            headers: { 'Authorization': usersTest[0].token }
+        });
+        console.log('Get conversations with pagination response status:', response);
+        const body = await response.json();
+        console.log('Get conversations with pagination response:', body);
+
+        expect(response.status).toBe(200);
+        expect(body.success).toBe(true);
+        expect(body.data).toBeDefined();
+        expect(body.data.items.length).toBeLessThanOrEqual(2);
+    });
+
+    it("should return empty array if no conversations found", async () => {
+        const response = await fetch('http://localhost:3000/api/conversations?search=NonExistent', {
+            method: 'GET',
+            headers: { 'Authorization': usersTest[0].token }
+        });
+        console.log('Get conversations with no results response status:', response);
+        const body = await response.json();
+        console.log('Get conversations with no results response:', body);
+        expect(response.status).toBe(200);
+        expect(body.success).toBe(true);
+        expect(body.data).toBeDefined();
+        expect(body.data.items.length).toBe(0);
+    }
+    );
+
+
+    it("should return conversations with sorting", async () => {
+        const response = await fetch('http://localhost:3000/api/conversations?sortBy=createdAt&sortOrder=desc', {
+            method: 'GET',
+            headers: { 'Authorization': usersTest[0].token }
+        });
+        console.log('Get conversations with sorting response status:', response);
+        const body = await response.json();
+        console.log('Get conversations with sorting response:', body);
+        expect(response.status).toBe(200);
+        expect(body.success).toBe(true);
+        expect(body.data).toBeDefined();
+    });
+
+    it("should return conversations with filtering", async () => {
+        const response = await fetch('http://localhost:3000/api/conversations?senderId=1', {
+            method: 'GET',
+            headers: { 'Authorization': usersTest[0].token }
+        });
+        console.log('Get conversations with filtering response status:', response);
+        const body = await response.json();
+        console.log('Get conversations with filtering response:', body);
+        expect(response.status).toBe(200);
+        expect(body.success).toBe(true);
+        expect(body.data).toBeDefined();
+    });
+
     afterEach(async () => {
         await UserTest.delete(usersTest[0].username);
         await UserTest.delete(usersTest[1].username);
