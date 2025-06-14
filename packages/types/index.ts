@@ -7,6 +7,7 @@ export * from "./src/user/user";
 export * from "./src/conversation/conversation-groups-member";
 export * from "./src/conversation/conversation-groups";
 export * from "./src/conversation/conversation";
+export * from "./src/conversation/conversation-thread";
 export * from "./src/conversation/conversation-group-message";
 
 export * from "./src/api-response";

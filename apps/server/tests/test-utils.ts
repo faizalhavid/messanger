@@ -147,6 +147,32 @@ export class ConversationTest {
     }
 }
 
+export class ConversationThreadsTest {
+    static async create(props: {
+        id: string;
+        type: 'PRIVATE' | 'GROUP';
+        userAId?: string;
+        userBId?: string;
+        title?: string;
+        messageId?: string;
+    }) {
+        const { id, title, creatorId, participantIds } = props;
+        await prismaClient.conversationThread.create({
+            data: {
+                id: id,
+                title: title,
+                creatorId: creatorId,
+                participants: {
+                    create: participantIds.map(userId => ({
+                        user: { connect: { id: userId } }
+                    }))
+                }
+            }
+        });
+    }
+
+}
+
 export class ConversationGroupsTest {
     static async create(props: {
         id: string;

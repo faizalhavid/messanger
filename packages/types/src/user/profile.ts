@@ -8,15 +8,13 @@ export interface ProfileRequest {
     avatar?: string;
 }
 
-export interface ProfilePublic extends Omit<Profile, 'updatedAt' | 'userId' | 'bioId'> {
-    user: Omit<UserPublic, 'createdAt' | 'updatedAt'>;
+export interface ProfilePublic extends Omit<Profile, 'updatedAt' | 'bioId'> {
     bio?: Omit<BiodataPublic, 'createdAt' | 'updatedAt'>;
 }
 
 export namespace ProfilePublic {
-    export function fromProfile(profile: Profile & { user: User, bio?: Biodata }): ProfilePublic {
+    export function fromProfile(profile: Profile & { bio?: Biodata }): ProfilePublic {
         const {
-            userId,
             bioId,
             updatedAt,
             // isDeleted,
@@ -25,7 +23,6 @@ export namespace ProfilePublic {
         } = profile;
         return {
             ...rest,
-            user: UserPublic.fromUser(profile.user),
             bio: profile.bio ? BiodataPublic.fromBiodata(profile.bio) : undefined
         };
     }

@@ -11,71 +11,12 @@ export const conversationController = new Hono<{ Variables: HonoContext }>();
 
 
 
-conversationController.get("/", async (c) => {
-    const user = c.get("authenticatedUser");
-    const queryParams = c.req.query();
-    const { items, meta } = await ConversationService.getConversations(user.id, queryParams);
-
-    const response: PaginatedResponse<ConversationPublic> = {
-        success: true,
-        message: "Messages retrieved successfully",
-        data: { items, meta }
-    };
-    return c.json(response);
-});
-conversationController.get("/:id", async (c) => {
-    const authenticatedUser = c.get("authenticatedUser");
-    const interlocutorUserId = c.req.param("id");
-    const messages = await ConversationService.getConversationBetweenUsers(authenticatedUser.id, interlocutorUserId);
-
-    const response: PaginatedResponse<ConversationPublic> = {
-        success: true,
-        message: "Message retrieved successfully",
-        data: {
-            items: messages,
-            meta: {
-                totalItems: messages.length,
-                totalPages: 1,
-                page: 1,
-                pageSize: messages.length,
-                hasNextPage: false,
-                hasPreviousPage: false
-            }
-        }
-    };
-
-    return c.json(response);
-});
-
-conversationController.get("/:id", async (c) => {
-    const authenticatedUser = c.get("authenticatedUser");
-    const interlocutorUserId = c.req.param("id");
-    const message = await ConversationService.getConversationBetweenUsers(authenticatedUser.id, interlocutorUserId);
-
-    const response: PaginatedResponse<ConversationPublic> = {
-        success: true,
-        message: "Message retrieved successfully",
-        data: {
-            items: message,
-            meta: {
-                totalItems: 1,
-                totalPages: 1,
-                page: 1,
-                pageSize: 1,
-                hasNextPage: false,
-                hasPreviousPage: false
-            }
-        }
-    };
-
-    return c.json(response);
-});
 
 conversationController.post("/", async (c) => {
     const user = c.get("authenticatedUser");
 
     const request = await c.req.json();
-    const result = await ConversationService.sendMessage(request, user.id);
+    const result = await ConversationService.createConversation(request, user.id);
 
     const broadcastPayload = generateWSBroadcastPayload<ConversationPublic>(result, WsEventName.ConversationCreated);
 
@@ -122,3 +63,68 @@ function generateWSBroadcastPayload<T>(
         requestId: randomUUID(),
     };
 }
+
+
+/* 
+
+conversationController.get("/", async (c) => {
+    const user = c.get("authenticatedUser");
+    const queryParams = c.req.query();
+    const { items, meta } = await ConversationService.getConversations(user.id, queryParams);
+
+    const response: PaginatedResponse<ConversationPublic> = {
+        success: true,
+        message: "Messages retrieved successfully",
+        data: { items, meta }
+    };
+    return c.json(response);
+});
+conversationController.get("/:id", async (c) => {
+    const authenticatedUser = c.get("authenticatedUser");
+    const interlocutorUserId = c.req.param("id");
+    const messages = await ConversationService.getConversationBetweenUsers(authenticatedUser.id, interlocutorUserId);
+
+    const response: PaginatedResponse<ConversationPublic> = {
+        success: true,
+        message: "Message retrieved successfully",
+        data: {
+            items: messages,
+            meta: {
+                totalItems: messages.length,
+                totalPages: 1,
+                page: 1,
+                pageSize: messages.length,
+                hasNextPage: false,
+                hasPreviousPage: false
+            }
+        }
+    };
+
+    return c.json(response);
+});
+conversationController.get("/:id", async (c) => {
+    const authenticatedUser = c.get("authenticatedUser");
+    const interlocutorUserId = c.req.param("id");
+    const message = await ConversationService.getConversationBetweenUsers(authenticatedUser.id, interlocutorUserId);
+
+    const response: PaginatedResponse<ConversationPublic> = {
+        success: true,
+        message: "Message retrieved successfully",
+        data: {
+            items: message,
+            meta: {
+                totalItems: 1,
+                totalPages: 1,
+                page: 1,
+                pageSize: 1,
+                hasNextPage: false,
+                hasPreviousPage: false
+            }
+        }
+    };
+
+    return c.json(response);
+});
+
+
+*/

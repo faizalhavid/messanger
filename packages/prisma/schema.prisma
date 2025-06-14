@@ -43,6 +43,9 @@ model User {
   ReceivedConversations Conversation[]             @relation("ReceivedConversations")
   messageGroups         ConversationGroup[]
   messageGroupMembers   ConversationGroupMembers[]
+  threadsAsUserA        ConversationThread[]       @relation("ThreadUserA")
+  threadsAsUserB        ConversationThread[]       @relation("ThreadUserB")
+  GroupThreadDelete GroupThreadDelete[]
 
   @@index([username], name: "idx_user_username")
   @@index([email], name: "idx_user_email")
@@ -99,10 +102,50 @@ model Conversation {
   content String @db.Text
 
   messageGroupMessages ConversationGroupMessages[]
+  ConversationThread   ConversationThread?         @relation(fields: [conversationThreadId], references: [id])
+  conversationThreadId String?
 
   @@index([senderId], name: "idx_conversation_sender_id")
   @@index([receiverId], name: "idx_conversation_receiver_id")
   @@map("conversations")
+}
+
+model ConversationThread {
+  id        String   @id @default(cuid())
+  type      String   // 'PRIVATE' | 'GROUP'
+
+  userAId   String?
+  userBId   String?
+  userA     User?    @relation("ThreadUserA", fields: [userAId], references: [id])
+  userB     User?    @relation("ThreadUserB", fields: [userBId], references: [id])
+
+  groupId   String?
+  group     ConversationGroup? @relation(fields: [groupId], references: [id])
+
+  messages  Conversation[]
+
+  // Soft delete fields for each user (for private)
+  isDeletedByUserA Boolean @default(false) @map("is_deleted_by_user_a")
+  isDeletedByUserB Boolean @default(false) @map("is_deleted_by_user_b")
+
+  // Soft delete for group members (for group)
+  groupThreadDeletes GroupThreadDelete[]
+
+  @@unique([userAId, userBId])
+}
+
+model GroupThreadDelete {
+  id        String   @id @default(cuid())
+  threadId  String
+  userId    String
+
+  thread    ConversationThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  isDeleted Boolean @default(false)
+
+  @@unique([threadId, userId])
+  @@map("group_thread_deletes")
 }
 
 model ConversationGroup {
@@ -117,10 +160,11 @@ model ConversationGroup {
   isDeleted Boolean   @default(false) @map("is_deleted")
   isPublic  Boolean   @default(false) @map("is_public")
 
-  ownerId       String                      @map("owner_id")
-  owner         User                        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  conversations ConversationGroupMessages[]
-  members       ConversationGroupMembers[]
+  ownerId            String                      @map("owner_id")
+  owner              User                        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  conversations      ConversationGroupMessages[]
+  members            ConversationGroupMembers[]
+  ConversationThread ConversationThread[]
 
   @@unique([name, ownerId], name: "unique_conversation_group_name_owner")
   @@index([ownerId], name: "idx_conversation_group_owner_id")

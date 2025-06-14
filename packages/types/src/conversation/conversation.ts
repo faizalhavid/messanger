@@ -1,5 +1,7 @@
 import type { Conversation, Profile, User } from "@prisma/client";
 import { ProfilePublic } from "../user/profile";
+import { UserPublic } from "packages/types";
+
 
 export type ConversationRequest = {
     content: string;
@@ -11,34 +13,42 @@ export interface ConversationGroupsMessagesRequest {
 }
 
 
-export interface ConversationUserProfile extends Omit<ProfilePublic, "updatedAt" | "bioId" | "userId"> { }
+export interface ConversationUserProfile {
+    id: string;
+    username: string;
+    avatar?: string | null;
+}
 
-export interface ConversationPublic extends Omit<Conversation, "updatedAt" | "senderId" | "receiverId"> {
-    sender: ConversationUserProfile;
+export interface ConversationPublic extends Omit<Conversation, "updatedAt" | "receiverId"> {
+    // sender: ConversationUserProfile;
     receiver: ConversationUserProfile;
 }
 
 export namespace ConversationPublic {
     export function fromConversationToConversationPublic(
-        conversation: Conversation & { sender: Profile & { user: User }, receiver: Profile & { user: User } }
+        conversation: Conversation & { receiver: ConversationUserProfile }
     ): ConversationPublic {
+        const receiverProfile = {
+            id: conversation.receiver.id,
+            username: conversation.receiver.username,
+            avatar: conversation.receiver?.avatar
+        };
+
         return {
             id: conversation.id,
+            conversationThreadId: conversation.conversationThreadId,
             content: conversation.content,
             isRead: conversation.isRead,
             createdAt: conversation.createdAt,
             isDeletedBySender: conversation.isDeletedBySender,
             isDeletedByReceiver: conversation.isDeletedByReceiver,
-            sender: ProfilePublic.fromProfile(conversation.sender),
-            receiver: ProfilePublic.fromProfile(conversation.receiver),
+            senderId: conversation.senderId,
+            receiver: receiverProfile
         };
     }
-    export function fromConversationToConversationPublicArray(
-        conversations: Array<Conversation & { sender: Profile & { user: User }, receiver: Profile & { user: User } }>
-    ): ConversationPublic[] {
-        return conversations.map(ConversationPublic.fromConversationToConversationPublic);
-    }
 }
+
+
 
 export interface ListUserConversationsResponse {
     lastMessage: ConversationPublic | null;

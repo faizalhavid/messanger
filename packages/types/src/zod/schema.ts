@@ -66,7 +66,20 @@ export const groupMessageSchema = z.object({
     content: z.string().min(1, "Message content is required").max(500, "Message content must not exceed 500 characters")
 });
 
-
+export const conversationThreadSchema = z.object({
+    userAId: z.string().min(1, "User A ID is required").optional(),
+    userBId: z.string().min(1, "User B ID is required").optional(),
+    groupId: z.string().min(1, "Group ID is required").optional(),
+    type: z.enum(['PRIVATE', 'GROUP']),
+}).refine(
+    (data) =>
+        (data.type === 'PRIVATE' && !!data.userAId && !!data.userBId && !data.groupId) ||
+        (data.type === 'GROUP' && !!data.groupId && !data.userAId && !data.userBId),
+    {
+        message: "For PRIVATE, userAId and userBId are required and groupId must be empty. For GROUP, groupId is required and userAId/userBId must be empty.",
+        path: ['type'],
+    }
+);
 
 export const registerSchema = z.object({
     username: z.string().min(3).max(20).optional(),

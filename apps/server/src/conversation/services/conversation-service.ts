@@ -1,52 +1,104 @@
 import { send } from "process";
 import { prismaClient } from "@messanger/prisma";
-import { ConversationRequest, ConversationPublic, messageSchema, ConversationQueryParams, PaginatedResponse, PaginatedData } from "@messanger/types";
-
+import { ConversationRequest, ConversationPublic, messageSchema, ConversationQueryParams, PaginatedResponse, PaginatedData, ProfilePublic } from "@messanger/types";
 
 
 
 export class ConversationService {
     private static conversationRepository = prismaClient.conversation;
+    private static conversationThreadRepository = prismaClient.conversationThread;
 
-    static async sendMessage(data: ConversationRequest, senderId: string): Promise<ConversationPublic> {
+    static async createConversation(data: ConversationRequest, userId: string): Promise<ConversationPublic> {
         data = messageSchema.parse(data);
-        const sender = await prismaClient.user.findFirst({
-            where: { id: senderId },
-            include: { profile: true }
-        });
-        if (!sender) {
-            throw new Error("Sender not found");
-        }
-        const receiver = await prismaClient.user.findFirst({
-            where: { id: data.receiverId },
-            include: { profile: true }
-        });
-        if (!receiver) {
-            throw new Error("Receiver not found");
-        }
-        if (sender.id === receiver.id) {
-            throw new Error("Sender and receiver cannot be the same");
-        }
-        const message = await this.conversationRepository.create({
-            data: {
-                content: data.content,
-                senderId: sender.id,
-                receiverId: receiver.id
+        let thread = await this.conversationThreadRepository.findFirst({
+            where: {
+                userAId: userId,
+                userBId: data.receiverId,
+                type: 'PRIVATE'
             },
             include: {
-                sender: { include: { profile: true } },
+                userA: { include: { profile: true } },
+                userB: { include: { profile: true } }
+            }
+        });
+
+        if (!thread) {
+            thread = await this.conversationThreadRepository.create({
+                data: {
+                    type: 'PRIVATE',
+                    userAId: userId,
+                    userBId: data.receiverId
+                },
+                include: {
+                    userA: { include: { profile: true } },
+                    userB: { include: { profile: true } }
+                }
+            });
+        }
+        const conversation = await this.conversationRepository.create({
+            data: {
+                senderId: userId,
+                receiverId: data.receiverId,
+                content: data.content,
+                conversationThreadId: thread.id
+            },
+            include: {
                 receiver: { include: { profile: true } }
             }
         });
+        const receiverProfile = {
+            id: conversation.receiver.id,
+            username: conversation.receiver.username,
+            avatar: conversation.receiver.profile?.avatar
+        }
         return ConversationPublic.fromConversationToConversationPublic({
-            ...message,
-            sender: { ...sender.profile!, user: { ...sender } },
-            receiver: { ...receiver.profile!, user: { ...receiver } }
+            ...conversation,
+            receiver: receiverProfile
         });
     }
 
-    static async getConversations(userId: string, queryParams: ConversationQueryParams): Promise<PaginatedData<ConversationPublic>> {
-        console.log("Fetching conversations for user:", userId, "with query params:", queryParams);
+    static async deleteMessage(messageId: string, userId: string): Promise<void> {
+
+        const message = await this.conversationRepository.findUnique({
+            where: { id: messageId },
+            include: {
+                ConversationThread: true
+            }
+        });
+
+        if (!message) throw new Error("Message Not Fou d");
+
+        // 2. Tentukan POV user (sender atau receiver)
+        let updateData: Partial<{ isDeletedBySender: boolean; isDeletedByReceiver: boolean }> = {};
+
+        if (message.senderId === userId) {
+            updateData.isDeletedBySender = true;
+        } else if (
+            message.ConversationThread?.id &&
+            (message.ConversationThread?.userAId === userId || message.ConversationThread?.userBId === userId)
+        ) {
+            updateData.isDeletedByReceiver = true;
+        } else {
+            throw new Error("You are not allowed to delete this message");
+        }
+
+        await this.conversationRepository.update({
+            where: { id: messageId },
+            data: updateData
+        });
+
+        const isDeletedBySender = updateData.isDeletedBySender ?? message.isDeletedBySender;
+        const isDeletedByReceiver = updateData.isDeletedByReceiver ?? message.isDeletedByReceiver;
+
+        if (isDeletedBySender && isDeletedByReceiver) {
+            await this.conversationRepository.delete({
+                where: { id: messageId }
+            });
+        }
+    }
+
+    /* 
+        static async getConversations(userId: string, queryParams: ConversationQueryParams): Promise<PaginatedData<ConversationPublic>> {
         const { sortBy = "createdAt", sortOrder = "desc", page = 1, pageSize = 10, search, ...rest } = queryParams;
         const skip = (page - 1) * pageSize;
         const take = pageSize;
@@ -147,23 +199,6 @@ export class ConversationService {
                 })
             );
     }
-
-    static async deleteMessage(messageId: string, userId: string): Promise<void> {
-        const message = await this.conversationRepository.findUniqueOrThrow({
-            where: { id: messageId },
-            include: { sender: true, receiver: true }
-        });
-        if (message.senderId === userId) {
-            await this.conversationRepository.update({
-                where: { id: messageId },
-                data: { isDeletedBySender: true }
-            });
-        } else if (message.receiverId === userId) {
-            await this.conversationRepository.update({
-                where: { id: messageId },
-                data: { isDeletedByReceiver: true }
-            });
-        }
-    }
+    */
 
 }
