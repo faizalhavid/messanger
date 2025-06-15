@@ -36,6 +36,7 @@ export interface PaginationMeta {
 }
 
 export interface PaginatedData<T> {
+    [key: string]: any
     items: T[] | T
     meta: PaginationMeta
 }

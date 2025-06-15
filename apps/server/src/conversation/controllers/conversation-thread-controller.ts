@@ -1,7 +1,10 @@
-import { BaseApiResponse, ConversationThreadMessages, HonoContext, PaginatedResponse } from "@messanger/types";
+import { BaseApiResponse, ConversationThreadMessages, HonoContext, PaginatedResponse, WsEventName, WsTopic } from "@messanger/types";
 import { Hono } from "hono";
 import { ConversationService } from "../services/conversation-service";
 import { ConversationThreadService } from "../services/conversation-thread-service";
+import { generateWSBroadcastPayload } from "src/websocket/config";
+import { server } from "src";
+import { Conversation } from "@prisma/client";
 
 
 
@@ -26,7 +29,7 @@ conversationThreadController.get("/:id", async (c) => {
     const authenticatedUser = c.get("authenticatedUser");
     const threadId = c.req.param("id");
     const queryParams = c.req.query();
-    const result = await ConversationThreadService.getConversationThreadById(authenticatedUser.id, threadId, queryParams);
+    const result = await ConversationThreadService.getConversationThreadById(threadId, authenticatedUser.id, queryParams);
 
     if (!result) {
         const response: BaseApiResponse = {
@@ -36,12 +39,13 @@ conversationThreadController.get("/:id", async (c) => {
         return c.json(response, 404);
     }
 
-    const { items, meta } = result;
+    const { thread, items, meta } = result;
 
-    const response: PaginatedResponse<ConversationThreadMessages> = {
+    const response: PaginatedResponse<Conversation> = {
         success: true,
         message: "Conversation retrieved successfully",
         data: {
+            thread,
             items,
             meta
         }
@@ -49,12 +53,25 @@ conversationThreadController.get("/:id", async (c) => {
     return c.json(response);
 });
 
+conversationThreadController.post("/", async (c) => {
+    const authenticatedUser = c.get("authenticatedUser");
+    const request = await c.req.json();
+    try {
+        const result = await ConversationThreadService.createConversationThread(request, authenticatedUser.id);
+        const broadcastPayload = generateWSBroadcastPayload(result, WsEventName.ConversationThreadCreated);
+        server.publish(WsTopic.Conversations, JSON.stringify(broadcastPayload));
+        return c.json({ success: true, message: "Conversation created successfully", data: result });
+    } catch (error) {
+        return c.json({ success: false, message: (error instanceof Error ? error.message : "An error occurred") }, 500);
+    }
+});
+
 conversationThreadController.delete("/:id", async (c) => {
     const authenticatedUser = c.get("authenticatedUser");
     const threadId = c.req.param("id");
 
     try {
-        await ConversationThreadService.deleteConversationThread(authenticatedUser.id, threadId);
+        await ConversationThreadService.deleteConversationThread(threadId, authenticatedUser.id,);
         return c.json({ success: true, message: "Conversation deleted successfully" });
     } catch (error) {
         return c.json({ success: false, message: (error instanceof Error ? error.message : "An error occurred") }, 404);

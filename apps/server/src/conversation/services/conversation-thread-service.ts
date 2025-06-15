@@ -1,5 +1,6 @@
 import { prismaClient } from "@messanger/prisma";
 import { ConversationPublic, ConversationQueryParams, ConversationThreadList, ConversationThreadMessages, ConversationThreadRequest, conversationThreadSchema, PaginatedData } from "@messanger/types";
+import { Conversation } from "@prisma/client";
 
 
 
@@ -10,10 +11,9 @@ export class ConversationThreadService {
     private static groupRepository = prismaClient.conversationGroup;
 
     static async getConversationThreads(userId: string, queryParams: ConversationQueryParams): Promise<PaginatedData<ConversationThreadList>> {
-        const { sortBy = "updatedAt", sortOrder = "desc", page = 1, pageSize = 10, search, type = 'ALL', ...rest } = queryParams;
+        const { sortBy = "createdAt", sortOrder = "desc", page = 1, pageSize = 10, search, type = 'ALL' } = queryParams;
         const skip = (page - 1) * pageSize;
         const take = pageSize;
-
 
         const where: any = {
             OR: [
@@ -22,9 +22,7 @@ export class ConversationThreadService {
             ]
         };
 
-        if (type !== 'ALL') {
-            where.type = type;
-        }
+        if (type !== 'ALL') where.type = type;
 
         if (search) {
             where.OR = [
@@ -40,10 +38,8 @@ export class ConversationThreadService {
             ];
         }
 
-        // Count total items for pagination
         const totalItems = await this.conversationThreadRepository.count({ where });
 
-        // Fetch threads with pagination and sorting
         const threads = await this.conversationThreadRepository.findMany({
             where,
             include: {
@@ -51,96 +47,47 @@ export class ConversationThreadService {
                 userB: { include: { profile: true } },
                 group: true,
                 messages: {
-                    orderBy: { createdAt: 'desc' },
+                    orderBy: { [sortBy]: sortOrder },
                     take: 1
                 }
             },
-            orderBy: { [sortBy]: sortOrder },
             skip,
             take
         });
 
-        let result: ConversationThreadList[] = [];
 
-        if (type === 'ALL') {
-            result = threads.map(thread => {
-                if (thread.type === 'PRIVATE') {
-                    const isUserA = thread.userAId === userId;
-                    const unreadCount = thread.messages.filter(message => {
-                        return isUserA ? message.receiverId === userId && !message.isRead : message.senderId === userId && !message.isRead;
-                    }).length;
-                    const interlocutor = isUserA ? thread.userB : thread.userA;
 
-                    if (!interlocutor?.id || !interlocutor?.username) {
-                        return undefined;
-                    }
-                    const { id, username, profile } = interlocutor;
-                    return ConversationThreadList.fromConversationThread(
-                        thread,
-                        { id, username, avatar: profile?.avatar },
-                        undefined,
-                        thread.messages[0],
-                        thread.messages[0]?.createdAt ?? null,
-                        unreadCount
-                    );
-                } else {
-                    const group = {
-                        name: thread.group?.name ?? '',
-                        avatar: thread.group?.avatar ?? null
-                    }
-                    const unreadCount = thread.messages.filter(message => {
-                        return message.receiverId === userId && !message.isRead;
-                    }).length;
-                    return {
-                        ...thread,
-                        group,
-                        lastMessage: thread.messages[0],
-                        updatedAt: thread.messages[0]?.createdAt ?? new Date(),
-                        unreadCount
-                    };
+        const result = (await Promise.all(threads.map(async thread => {
+            const { userA, userB, messages, ...data } = thread;
+            const isUserA = thread.userAId === userId;
+            const interlocutor = isUserA ? thread.userB : thread.userA;
+            if (!interlocutor?.id || !interlocutor?.username) return undefined;
+            const unreadCount = await this.conversationRepository.count({
+                where: {
+                    conversationThreadId: thread.id,
+                    isRead: false,
                 }
-            }).filter((item): item is ConversationThreadList => !!item);
-        } else {
-            result = threads
-                .map(thread => {
-                    if (thread.type === 'PRIVATE') {
-                        const isUserA = thread.userAId === userId;
-                        const unreadCount = thread.messages.filter(message => {
-                            return isUserA ? message.receiverId === userId && !message.isRead : message.senderId === userId && !message.isRead;
-                        }).length;
-                        const interlocutor = isUserA ? thread.userB : thread.userA;
+            });
+            const group = { name: thread.group?.name ?? '', avatar: thread.group?.avatar ?? null };
 
-                        if (!interlocutor?.id || !interlocutor?.username) {
-                            return undefined;
-                        }
-                        const { id, username, profile } = interlocutor;
-                        return ConversationThreadList.fromConversationThread(
-                            thread,
-                            { id, username, avatar: profile?.avatar },
-                            undefined,
-                            thread.messages[0],
-                            thread.messages[0]?.createdAt ?? null,
-                            unreadCount
-                        );
-                    } else {
-                        const group = {
-                            name: thread.group?.name ?? '',
-                            avatar: thread.group?.avatar ?? null
-                        }
-                        const unreadCount = thread.messages.filter(message => {
-                            return message.receiverId === userId && !message.isRead;
-                        }).length;
-                        return {
-                            ...thread,
-                            group,
-                            lastMessage: thread.messages[0],
-                            updatedAt: thread.messages[0]?.createdAt ?? new Date(),
-                            unreadCount
-                        };
-                    }
-                })
-                .filter((item): item is ConversationThreadList => !!item);
-        }
+            if (thread.type === 'PRIVATE') {
+                return ConversationThreadList.fromConversationThread(
+                    data,
+                    { id: interlocutor.id, username: interlocutor.username, avatar: interlocutor.profile?.avatar },
+                    undefined,
+                    thread.messages[0],
+                    unreadCount
+                );
+            } else {
+                return ConversationThreadList.fromConversationThread(
+                    data,
+                    undefined,
+                    group,
+                    thread.messages[0],
+                    unreadCount
+                );
+            }
+        }))).filter((item): item is ConversationThreadList => !!item);
 
         const meta = {
             totalItems,
@@ -150,13 +97,11 @@ export class ConversationThreadService {
             hasNextPage: skip + take < totalItems,
             hasPreviousPage: skip > 0
         };
-        return {
-            items: result,
-            meta
-        };
+
+        return { items: result, meta };
     }
 
-    static async getConversationThreadById(threadId: string, userId: string, queryParams: ConversationQueryParams): Promise<PaginatedData<ConversationThreadMessages> | null> {
+    static async getConversationThreadById(threadId: string, userId: string, queryParams: ConversationQueryParams): Promise<PaginatedData<Conversation> | null> {
         const { sortBy = "updatedAt", sortOrder = "desc", page = 1, pageSize = 10, search, ...rest } = queryParams;
         const skip = (page - 1) * pageSize;
         const take = pageSize;
@@ -164,9 +109,9 @@ export class ConversationThreadService {
         const where: any = {
             id: threadId,
             OR: [
-                { userAId: userId },
-                { userBId: userId },
-            ],
+                { userAId: "id-test1" },
+                { userBId: "id-test1" }
+            ]
         };
 
         if (search) {
@@ -174,6 +119,12 @@ export class ConversationThreadService {
                 ...where.OR,
                 {
                     message: {
+                        where: {
+                            OR: [
+                                { isDeletedBySender: false },
+                                { isDeletedByReceiver: false }
+                            ]
+                        },
                         content: {
                             contains: search,
                             mode: 'insensitive'
@@ -182,10 +133,22 @@ export class ConversationThreadService {
                 }
             ];
         }
-        const totalItems = await this.conversationRepository.count({ where });
+        const totalItems = await this.conversationThreadRepository.count({ where });
 
         const thread = await this.conversationThreadRepository.findUnique({
-            where: { id: threadId },
+            where: {
+                id: threadId,
+                OR: [
+                    {
+                        userAId: userId,
+                        isDeletedByUserA: false
+                    },
+                    {
+                        userBId: userId,
+                        isDeletedByUserB: false
+                    }
+                ]
+            },
             include: {
                 userA: { include: { profile: true } },
                 userB: { include: { profile: true } },
@@ -223,27 +186,42 @@ export class ConversationThreadService {
             username: interlocutorUser.username,
             avatar: interlocutorUser.profile?.avatar
         };
-
+        const { userA, userB, group, messages, ...threadData } = thread;
         return {
-            items: ConversationThreadMessages.fromConversationThread(
-                thread,
-                interlocutor,
-                thread.group ? { name: thread.group.name ?? '', avatar: thread.group.avatar } : undefined,
-                thread.messages,
-            ),
+            thread: {
+                ...threadData,
+                interlocutor: {
+                    id: interlocutor.id,
+                    username: interlocutor.username,
+                    avatar: interlocutor.avatar ?? null
+                },
+                group: group ? { name: group.name ?? '', avatar: group.avatar ?? null } : undefined,
+                lastMessage: thread.messages[0],
+                updatedAt: thread.messages[0]?.createdAt ?? new Date(),
+                unreadCount: thread.messages.filter(m => isUserA ? m.receiverId === userId && !m.isRead : m.senderId === userId && !m.isRead).length
+            } as ConversationThreadList,
+            items: thread.messages,
             meta
         };
     }
 
-    static async createConversationThread(req: ConversationThreadRequest): Promise<ConversationThreadList> {
+    static async createConversationThread(req: ConversationThreadRequest, userId: string): Promise<ConversationThreadList> {
+        req.userAId = userId;
         req = conversationThreadSchema.parse(req);
+
+        if (req.type === 'PRIVATE') {
+            req.userAId = userId;
+        }
+
         const existingThread = await this.conversationThreadRepository.findFirst({
-            where: {
-                OR: [
-                    { userAId: req.userAId, userBId: req.userBId, type: 'PRIVATE' },
-                    { groupId: req.groupId, type: 'GROUP' }
-                ]
-            },
+            where: req.type === 'PRIVATE'
+                ? {
+                    OR: [
+                        { userAId: req.userAId, userBId: req.userBId, type: 'PRIVATE' },
+                        { userAId: req.userBId, userBId: req.userAId, type: 'PRIVATE' }
+                    ]
+                }
+                : { groupId: req.groupId, type: 'GROUP' },
             include: {
                 userA: { include: { profile: true } },
                 userB: { include: { profile: true } },
@@ -256,10 +234,9 @@ export class ConversationThreadService {
         });
 
         if (existingThread) {
-            // Return the existing thread in the correct format
             let interlocutor;
             if (existingThread.type === 'PRIVATE') {
-                const isUserA = existingThread.userAId === req.userAId;
+                const isUserA = existingThread.userAId === userId;
                 const user = isUserA ? existingThread.userB : existingThread.userA;
                 interlocutor = user
                     ? { id: user.id, username: user.username, avatar: user.profile?.avatar }
@@ -268,13 +245,16 @@ export class ConversationThreadService {
             const group = existingThread.type === 'GROUP' && existingThread.group
                 ? { name: existingThread.group.name ?? '', avatar: existingThread.group.avatar }
                 : undefined;
+            const isUserA = existingThread.userAId === userId;
+            const unreadCount = existingThread.messages.filter(message => {
+                return isUserA ? message.receiverId === userId && !message.isRead : message.senderId === userId && !message.isRead;
+            }).length;
             return ConversationThreadList.fromConversationThread(
                 existingThread,
                 interlocutor,
                 group,
                 existingThread.messages[0],
-                existingThread.messages[0]?.createdAt ?? null,
-                0
+                unreadCount
             );
         }
 
@@ -293,8 +273,8 @@ export class ConversationThreadService {
                     type: req.type,
                 },
                 include: {
-                    userA: { include: { profile: true } },
-                    userB: { include: { profile: true } },
+                    // userA: { include: { profile: true } },
+                    // userB: { include: { profile: true } },
                     group: true,
                     messages: {
                         orderBy: { createdAt: 'desc' },
@@ -302,14 +282,18 @@ export class ConversationThreadService {
                     }
                 }
             });
+            // interlocutor is always the other user
             const interlocutor = { id: userB.id, username: userB.username, avatar: userB?.profile?.avatar };
+            const isUserA = thread.userAId === userId;
+            const unreadCount = thread.messages.filter(message => {
+                return isUserA ? message.receiverId === userId && !message.isRead : message.senderId === userId && !message.isRead;
+            }).length;
             return ConversationThreadList.fromConversationThread(
                 thread,
                 interlocutor,
                 undefined,
                 thread.messages[0],
-                thread.messages[0]?.createdAt ?? null,
-                0
+                unreadCount
             );
         } else if (req.type === 'GROUP' && req.groupId) {
             // Validate group exists
@@ -337,9 +321,7 @@ export class ConversationThreadService {
                 thread,
                 undefined,
                 groupInfo,
-                thread.messages[0],
-                thread.messages[0]?.createdAt ?? null,
-                0
+                thread.messages[0]
             );
         } else {
             throw new Error("Invalid request data for creating conversation thread");

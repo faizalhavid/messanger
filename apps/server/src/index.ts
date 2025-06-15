@@ -11,6 +11,7 @@ import { conversationController } from './conversation/controllers/conversation-
 import { conversationGroupController } from './conversation/controllers/conversation-group-controller';
 import { conversationGroupMessagesController } from './conversation/controllers/conversation-group-message-controller';
 import { ConversationTest, ProfileTest, usersTest, UserTest } from 'tests/test-utils';
+import { conversationThreadController } from './conversation/controllers/conversation-thread-controller';
 
 
 const app = new Hono<{ Variables: HonoContext }>();
@@ -101,6 +102,7 @@ api.get('', (c) => c.text('Hello Hono!'))
 api.route('/users', userController);
 api.route('/auth', authController);
 api.route('/profile', profileController);
+api.route('/conversation-threads', conversationThreadController);
 api.route('/conversations', conversationController);
 api.route('/conversation-groups', conversationGroupController);
 api.route('/conversation-groups-messages', conversationGroupMessagesController);

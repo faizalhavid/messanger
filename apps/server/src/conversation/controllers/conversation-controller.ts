@@ -6,6 +6,7 @@ import { ConversationPublic } from "@messanger/types";
 import { WsBroadcastEvent, WsEventName } from "@messanger/types";
 import { server } from "src";
 import { randomUUID } from "crypto";
+import { generateWSBroadcastPayload } from "src/websocket/config";
 
 export const conversationController = new Hono<{ Variables: HonoContext }>();
 
@@ -49,20 +50,7 @@ conversationController.delete("/:id", async (c) => {
     return c.json(response);
 })
 
-function generateWSBroadcastPayload<T>(
-    data: T,
-    event: WsEventName
-): WsBroadcastEvent<T> {
-    // @ts-ignore
-    return {
-        event: event,
-        timestamp: Date.now(),
-        // @ts-ignore
-        senderId: (data as any).senderId,
-        data: data,
-        requestId: randomUUID(),
-    };
-}
+
 
 
 /* 

@@ -3,6 +3,8 @@ import { ServerWebSocket } from 'bun';
 import { Context } from 'hono';
 import { UserService } from 'src/user/services/user-service';
 import { WsTopic, AppWSContext, WsBroadcastEvent, WsEventName } from '@messanger/types';
+import { randomUUID } from 'crypto';
+import { logger } from '@messanger/logging';
 ;
 
 export const { upgradeWebSocket, websocket } = createBunWebSocket();
@@ -116,3 +118,18 @@ function rejectConnection(code: number, reason: string) {
     };
 }
 
+export function generateWSBroadcastPayload<T>(
+    data: T,
+    event: WsEventName
+): WsBroadcastEvent<T> {
+    const payload: WsBroadcastEvent<T> = {
+        event: event,
+        timestamp: Date.now(),
+        // @ts-ignore
+        senderId: (data as any).senderId || null,
+        data: data,
+        requestId: randomUUID(),
+    };
+    logger.info(`Generated WebSocket broadcast payload for event '${event}':`, payload);
+    return payload;
+}

@@ -6,6 +6,7 @@ export enum WsEventName {
     ConversationCreated = "conversation-created",
     ConversationDeleted = "conversation-deleted",
     Notification = "notification",
+    ConversationThreadCreated = "conversation-thread-created",
     // Todo: need to implement this
     //ConversationUpdated = "conversation-updated",
     ConversationRead = "conversation-read",

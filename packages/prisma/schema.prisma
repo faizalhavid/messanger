@@ -109,7 +109,7 @@ model Conversation {
   @@index([receiverId], name: "idx_conversation_receiver_id")
   @@map("conversations")
 }
-
+// TODO : rename userA and B to be user and interlocutor
 model ConversationThread {
   id        String   @id @default(cuid())
   type      String   // 'PRIVATE' | 'GROUP'

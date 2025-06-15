@@ -8,7 +8,7 @@ export interface ConversationThreadRequest {
     type: 'PRIVATE' | 'GROUP';
 }
 
-export interface ConversationThreadList extends Omit<ConversationThread, | 'userAId' | 'userBId' | 'groupId'> {
+export interface ConversationThreadList extends Omit<ConversationThread, 'userAId' | 'userBId' | 'groupId'> {
     interlocutor?: {
         id: string;
         username: string;
@@ -36,11 +36,12 @@ export namespace ConversationThreadList {
             avatar?: string | null;
         },
         lastMessage: Conversation | undefined = undefined,
-        lastMessageAt: Date | null = null,
         unreadCount: number = 0
     ): ConversationThreadList {
+
+        const { userAId, userBId, groupId, ...rest } = thread;
         return {
-            ...thread,
+            ...rest,
             interlocutor: interlocutor ? {
                 id: interlocutor.id,
                 username: interlocutor.username,
@@ -51,7 +52,8 @@ export namespace ConversationThreadList {
                 avatar: group.avatar ?? null
             } : undefined,
             lastMessage: lastMessage,
-            updatedAt: lastMessageAt ?? new Date(),
+            // TODO : after Implement update message change this
+            updatedAt: lastMessage?.createdAt ?? lastMessage?.updatedAt,
             unreadCount
         };
     }
@@ -76,8 +78,9 @@ export namespace ConversationThreadMessages {
         },
         messages: Conversation[] = []
     ): ConversationThreadMessages {
+        const unreadCount = messages.filter(msg => !msg.isRead).length;
         return {
-            ...ConversationThreadList.fromConversationThread(thread, interlocutor, group),
+            ...ConversationThreadList.fromConversationThread(thread, interlocutor, group, undefined, unreadCount),
             messages
         };
     }
