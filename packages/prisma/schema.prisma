@@ -41,7 +41,7 @@ model User {
 
   sentConversations    Conversation[]      @relation("SentConversations")
   threadParticipants   ThreadParticipant[]
-  Thread               Thread[]
+  thread               Thread[]
   friendships          Friendship[]        @relation("UserFriendships")
   friendOf             Friendship[]        @relation("FriendOfFriendships")
   initiatedFriendships Friendship[]        @relation("InitiatorFriendships")
@@ -103,12 +103,12 @@ model Biodata {
 
 /// Thread untuk percakapan (PRIVATE atau GROUP)
 model Thread {
-  id      String     @id @default(cuid())
-  type    ThreadType
-  name    String? // hanya untuk GROUP
-  avatar  String? // hanya untuk GROUP
-  ownerId String     @map("createdById")
-  owner   User       @relation(fields: [ownerId], references: [id])
+  id        String     @id @default(cuid())
+  type      ThreadType
+  name      String? // hanya untuk GROUP
+  avatar    String? // hanya untuk GROUP
+  creatorId String     @map("createdById")
+  creator   User       @relation(fields: [creatorId], references: [id])
 
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")

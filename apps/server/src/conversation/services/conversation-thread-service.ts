@@ -1,5 +1,5 @@
 import { prismaClient } from '@messanger/prisma';
-import { ConversationPublic, ConversationQueryParams, ConversationThreadList, ConversationThreadMessages, ConversationThreadRequest, conversationThreadSchema, PaginatedData } from '@messanger/types';
+import { ConversationModelMapper, ConversationQueryParams, ConversationThreadList, ConversationThreadMessages, ConversationThreadRequest, conversationThreadSchema, PaginatedData } from '@messanger/types';
 import { Conversation } from '@prisma/client';
 
 export class ConversationThreadService {

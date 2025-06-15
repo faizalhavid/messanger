@@ -1,103 +1,97 @@
-import { send } from "process";
-import { prismaClient } from "@messanger/prisma";
-import { ConversationRequest, ConversationPublic, messageSchema, ConversationQueryParams, PaginatedResponse, PaginatedData, ProfilePublic } from "@messanger/types";
-
-
+import { send } from 'process';
+import { prismaClient } from '@messanger/prisma';
+import { ConversationRequest, ConversationModelMapper, messageSchema, ConversationQueryParams, PaginatedResponse, PaginatedData, ProfilePublic } from '@messanger/types';
 
 export class ConversationService {
-    private static conversationRepository = prismaClient.conversation;
-    private static conversationThreadRepository = prismaClient.conversationThread;
+  private static conversationRepository = prismaClient.conversation;
+  private static conversationThreadRepository = prismaClient.conversationThread;
 
-    static async createConversation(data: ConversationRequest, userId: string): Promise<ConversationPublic> {
-        data = messageSchema.parse(data);
-        let thread = await this.conversationThreadRepository.findFirst({
-            where: {
-                userAId: userId,
-                userBId: data.receiverId,
-                type: 'PRIVATE'
-            },
-            include: {
-                userA: { include: { profile: true } },
-                userB: { include: { profile: true } }
-            }
-        });
+  static async createConversation(data: ConversationRequest, userId: string): Promise<ConversationModelMapper> {
+    data = messageSchema.parse(data);
+    let thread = await this.conversationThreadRepository.findFirst({
+      where: {
+        userAId: userId,
+        userBId: data.receiverId,
+        type: 'PRIVATE',
+      },
+      include: {
+        userA: { include: { profile: true } },
+        userB: { include: { profile: true } },
+      },
+    });
 
-        if (!thread) {
-            thread = await this.conversationThreadRepository.create({
-                data: {
-                    type: 'PRIVATE',
-                    userAId: userId,
-                    userBId: data.receiverId
-                },
-                include: {
-                    userA: { include: { profile: true } },
-                    userB: { include: { profile: true } }
-                }
-            });
-        }
-        const conversation = await this.conversationRepository.create({
-            data: {
-                senderId: userId,
-                receiverId: data.receiverId,
-                content: data.content,
-                conversationThreadId: thread.id
-            },
-            include: {
-                receiver: { include: { profile: true } }
-            }
-        });
-        const receiverProfile = {
-            id: conversation.receiver.id,
-            username: conversation.receiver.username,
-            avatar: conversation.receiver.profile?.avatar
-        }
-        return ConversationPublic.fromConversationToConversationPublic({
-            ...conversation,
-            receiver: receiverProfile
-        });
+    if (!thread) {
+      thread = await this.conversationThreadRepository.create({
+        data: {
+          type: 'PRIVATE',
+          userAId: userId,
+          userBId: data.receiverId,
+        },
+        include: {
+          userA: { include: { profile: true } },
+          userB: { include: { profile: true } },
+        },
+      });
+    }
+    const conversation = await this.conversationRepository.create({
+      data: {
+        senderId: userId,
+        receiverId: data.receiverId,
+        content: data.content,
+        conversationThreadId: thread.id,
+      },
+      include: {
+        receiver: { include: { profile: true } },
+      },
+    });
+    const receiverProfile = {
+      id: conversation.receiver.id,
+      username: conversation.receiver.username,
+      avatar: conversation.receiver.profile?.avatar,
+    };
+    return ConversationModelMapper.fromConversationToConversationPublic({
+      ...conversation,
+      receiver: receiverProfile,
+    });
+  }
+
+  static async deleteMessage(messageId: string, userId: string): Promise<void> {
+    const message = await this.conversationRepository.findUnique({
+      where: { id: messageId },
+      include: {
+        ConversationThread: true,
+      },
+    });
+
+    if (!message) throw new Error('Message Not Fou d');
+
+    // 2. Tentukan POV user (sender atau receiver)
+    let updateData: Partial<{ isDeletedBySender: boolean; isDeletedByReceiver: boolean }> = {};
+
+    if (message.senderId === userId) {
+      updateData.isDeletedBySender = true;
+    } else if (message.ConversationThread?.id && (message.ConversationThread?.userAId === userId || message.ConversationThread?.userBId === userId)) {
+      updateData.isDeletedByReceiver = true;
+    } else {
+      throw new Error('You are not allowed to delete this message');
     }
 
-    static async deleteMessage(messageId: string, userId: string): Promise<void> {
+    await this.conversationRepository.update({
+      where: { id: messageId },
+      data: updateData,
+    });
 
-        const message = await this.conversationRepository.findUnique({
-            where: { id: messageId },
-            include: {
-                ConversationThread: true
-            }
-        });
+    const isDeletedBySender = updateData.isDeletedBySender ?? message.isDeletedBySender;
+    const isDeletedByReceiver = updateData.isDeletedByReceiver ?? message.isDeletedByReceiver;
 
-        if (!message) throw new Error("Message Not Fou d");
-
-        // 2. Tentukan POV user (sender atau receiver)
-        let updateData: Partial<{ isDeletedBySender: boolean; isDeletedByReceiver: boolean }> = {};
-
-        if (message.senderId === userId) {
-            updateData.isDeletedBySender = true;
-        } else if (
-            message.ConversationThread?.id &&
-            (message.ConversationThread?.userAId === userId || message.ConversationThread?.userBId === userId)
-        ) {
-            updateData.isDeletedByReceiver = true;
-        } else {
-            throw new Error("You are not allowed to delete this message");
-        }
-
-        await this.conversationRepository.update({
-            where: { id: messageId },
-            data: updateData
-        });
-
-        const isDeletedBySender = updateData.isDeletedBySender ?? message.isDeletedBySender;
-        const isDeletedByReceiver = updateData.isDeletedByReceiver ?? message.isDeletedByReceiver;
-
-        if (isDeletedBySender && isDeletedByReceiver) {
-            await this.conversationRepository.delete({
-                where: { id: messageId }
-            });
-        }
+    if (isDeletedBySender && isDeletedByReceiver) {
+      await this.conversationRepository.delete({
+        where: { id: messageId },
+      });
     }
+  }
 
-    /* 
+  /* 
         static async getConversations(userId: string, queryParams: ConversationQueryParams): Promise<PaginatedData<ConversationPublic>> {
         const { sortBy = "createdAt", sortOrder = "desc", page = 1, pageSize = 10, search, ...rest } = queryParams;
         const skip = (page - 1) * pageSize;
@@ -200,5 +194,4 @@ export class ConversationService {
             );
     }
     */
-
 }
