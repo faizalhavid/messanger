@@ -39,17 +39,12 @@ model User {
   lastLogin DateTime? @default(now())
   isActive  Boolean   @default(true)
 
-  SentConversations     Conversation[]             @relation("SentConversations")
-  ReceivedConversations Conversation[]             @relation("ReceivedConversations")
-  messageGroups         ConversationGroup[]
-  messageGroupMembers   ConversationGroupMembers[]
-  threadsAsUserA        ConversationThread[]       @relation("ThreadUserA")
-  threadsAsUserB        ConversationThread[]       @relation("ThreadUserB")
-  GroupThreadDelete GroupThreadDelete[]
-
-  @@index([username], name: "idx_user_username")
-  @@index([email], name: "idx_user_email")
-  @@map("users")
+  sentConversations    Conversation[]      @relation("SentConversations")
+  threadParticipants   ThreadParticipant[]
+  Thread               Thread[]
+  friendships          Friendship[]        @relation("UserFriendships")
+  friendOf             Friendship[]        @relation("FriendOfFriendships")
+  initiatedFriendships Friendship[]        @relation("InitiatorFriendships")
 }
 
 model Profile {
@@ -57,17 +52,38 @@ model Profile {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String   @unique @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   firstName String   @map("first_name") @db.VarChar(100)
   lastName  String   @map("last_name") @db.VarChar(100)
-  avatar    String?  @map("avatar") @db.VarChar(255) // URL to the avatar image
+  avatar    String?  @map("avatar") @db.VarChar(255) // URL ke avatar
   bioId     String?  @unique @map("bio_id")
   bio       Biodata? @relation(fields: [bioId], references: [id], onDelete: Cascade)
 
-  @@index([userId], name: "idx_profile_user_id")
-  @@index([bioId], name: "idx_profile_bio_id")
   @@map("profiles")
+}
+
+model Friendship {
+  id          String           @id @default(uuid())
+  userId      String // always the smaller ID
+  friendId    String // always the bigger ID
+  status      FriendshipStatus @default(PENDING)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  initiatorId String // who sent the request (userId or friendId)
+
+  user      User @relation("UserFriendships", fields: [userId], references: [id])
+  friend    User @relation("FriendOfFriendships", fields: [friendId], references: [id])
+  initiator User @relation("InitiatorFriendships", fields: [initiatorId], references: [id])
+
+  @@unique([userId, friendId], name: "unique_friendship_pair")
+}
+
+enum FriendshipStatus {
+  PENDING
+  ACCEPTED
+  BLOCKED
+  DECLINED
 }
 
 model Biodata {
@@ -85,123 +101,60 @@ model Biodata {
   @@map("biodata")
 }
 
+/// Thread untuk percakapan (PRIVATE atau GROUP)
+model Thread {
+  id      String     @id @default(cuid())
+  type    ThreadType
+  name    String? // hanya untuk GROUP
+  avatar  String? // hanya untuk GROUP
+  ownerId String     @map("createdById")
+  owner   User       @relation(fields: [ownerId], references: [id])
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at") // jika ingin soft delete thread
+  isDeleted Boolean   @default(false) @map("is_deleted")
+
+  participants ThreadParticipant[]
+  messages     Conversation[]
+
+  @@index([type])
+}
+
+enum ThreadType {
+  PRIVATE
+  GROUP
+}
+
+model ThreadParticipant {
+  id       String @id @default(cuid())
+  threadId String
+  userId   String
+  thread   Thread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Soft delete, read flag, dll.
+  isDeleted Boolean   @default(false) @map("is_deleted")
+  isRead    Boolean   @default(false) @map("is_read")
+  deletedAt DateTime? @map("deleted_at")
+
+  @@unique([threadId, userId])
+  @@index([userId])
+}
+
 model Conversation {
   id        String   @id @default(cuid())
+  threadId  String
+  senderId  String
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
-  senderId            String  @map("sender_id")
-  isDeletedBySender   Boolean @default(false) @map("is_deleted_by_sender")
-  sender              User    @relation("SentConversations", fields: [senderId], references: [id], onDelete: Cascade)
-  receiverId          String  @map("receiver_id")
-  receiver            User    @relation("ReceivedConversations", fields: [receiverId], references: [id], onDelete: Cascade)
-  isDeletedByReceiver Boolean @default(false) @map("is_deleted_by_receiver")
-
-  isRead Boolean @default(false) @map("is_read")
+  isDeleted Boolean  @default(false) @map("is_deleted")
 
   content String @db.Text
 
-  messageGroupMessages ConversationGroupMessages[]
-  ConversationThread   ConversationThread?         @relation(fields: [conversationThreadId], references: [id])
-  conversationThreadId String?
+  thread Thread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  sender User   @relation("SentConversations", fields: [senderId], references: [id], onDelete: Cascade)
 
-  @@index([senderId], name: "idx_conversation_sender_id")
-  @@index([receiverId], name: "idx_conversation_receiver_id")
-  @@map("conversations")
-}
-// TODO : rename userA and B to be user and interlocutor
-model ConversationThread {
-  id        String   @id @default(cuid())
-  type      String   // 'PRIVATE' | 'GROUP'
-
-  userAId   String?
-  userBId   String?
-  userA     User?    @relation("ThreadUserA", fields: [userAId], references: [id])
-  userB     User?    @relation("ThreadUserB", fields: [userBId], references: [id])
-
-  groupId   String?
-  group     ConversationGroup? @relation(fields: [groupId], references: [id])
-
-  messages  Conversation[]
-
-  // Soft delete fields for each user (for private)
-  isDeletedByUserA Boolean @default(false) @map("is_deleted_by_user_a")
-  isDeletedByUserB Boolean @default(false) @map("is_deleted_by_user_b")
-
-  // Soft delete for group members (for group)
-  groupThreadDeletes GroupThreadDelete[]
-
-  @@unique([userAId, userBId])
-}
-
-model GroupThreadDelete {
-  id        String   @id @default(cuid())
-  threadId  String
-  userId    String
-
-  thread    ConversationThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
-  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  isDeleted Boolean @default(false)
-
-  @@unique([threadId, userId])
-  @@map("group_thread_deletes")
-}
-
-model ConversationGroup {
-  id          String  @id @default(cuid())
-  name        String? @unique @db.VarChar(255)
-  description String? @db.Text
-  avatar      String? @db.VarChar(255)
-
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
-  deletedAt DateTime? @map("deleted_at")
-  isDeleted Boolean   @default(false) @map("is_deleted")
-  isPublic  Boolean   @default(false) @map("is_public")
-
-  ownerId            String                      @map("owner_id")
-  owner              User                        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  conversations      ConversationGroupMessages[]
-  members            ConversationGroupMembers[]
-  ConversationThread ConversationThread[]
-
-  @@unique([name, ownerId], name: "unique_conversation_group_name_owner")
-  @@index([ownerId], name: "idx_conversation_group_owner_id")
-  @@index([name], name: "idx_conversation_group_name")
-  @@map("conversation_groups")
-}
-
-model ConversationGroupMembers {
-  id        String    @id @default(cuid())
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
-  deletedAt DateTime? @map("deleted_at")
-  isDeleted Boolean   @default(false) @map("is_deleted")
-
-  userId  String @map("user_id")
-  groupId String @map("conversation_group_id")
-
-  user  User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  group ConversationGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, groupId], name: "unique_user_message_group")
-  @@map("conversation_group_members")
-}
-
-model ConversationGroupMessages {
-  id               String    @id @default(cuid())
-  createdAt        DateTime  @default(now()) @map("created_at")
-  updatedAt        DateTime  @updatedAt @map("updated_at")
-  deletedByOwner   DateTime? @map("deleted_by_owner")
-  isDeletedByOwner Boolean   @default(false) @map("is_deleted_by_owner")
-
-  groupId        String @map("conversation_group_id")
-  conversationId String @map("conversation_id")
-
-  group        ConversationGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  conversation Conversation      @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-
-  @@unique([groupId, conversationId], name: "unique_group_conversation")
-  @@map("conversation_group_messages")
+  @@index([threadId])
+  @@index([senderId])
 }
