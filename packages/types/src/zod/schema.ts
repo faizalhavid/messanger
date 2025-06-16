@@ -1,6 +1,34 @@
 import z from "zod";
 
 
+
+export const AllowedFileTypeEnum = z.enum(['image', 'video', 'document', 'audio']);
+
+export const AllowedFileSchema = z.object({
+    format: AllowedFileTypeEnum,
+    maxSize: z.number().int().positive(),
+});
+
+export const imageTypeSchema = z.object({
+    url: z.string().url(),
+    width: z.number().int().positive(),
+    height: z.number().int().positive(),
+    format: AllowedFileSchema,
+});
+
+export const fileTypeSchema = z.object({
+    name: z.string().min(1),
+    url: z.string().url(),
+    size: z.number().int().nonnegative(),
+    type: AllowedFileSchema,
+    createdAt: z.coerce.date(),
+});
+
+
+// export type ImageType = z.infer<typeof ImageTypeSchema>;
+// export type FileType = z.infer<typeof FileTypeSchema>;
+
+
 export const BiodataSchema = z.object({
     id: z.string().uuid(),
     gender: z.string().min(2).max(100),
@@ -10,74 +38,63 @@ export const BiodataSchema = z.object({
 });
 
 
-export const ProfileSchema = z.object({
-    firstName: z.string().min(2).max(100),
-    lastName: z.string().min(2).max(100),
+export const UserProfileSchema = z.object({
+    username: z.string().min(3).max(20),
+    // email: z.string().email().max(100).optional(),
+    avatar: imageTypeSchema.nullable(),
+    firstName: z.string().min(1).max(50).optional(),
+    lastName: z.string().min(1).max(50).optional(),
+    // bio: BiodataSchema.optional(),
+    // createdAt: z.coerce.date(),
+    // updatedAt: z.coerce.date(),
+    // isActive: z.boolean().default(true),
+    // isDeleted: z.boolean().default(false),
 });
 
-
-export const messageSchema = z.object({
-    content: z.string().min(1, "Message content is required").max(500, "Message content must not exceed 500 characters"),
-    receiverId: z.string().min(1, "User ID is required")
-})
-    .refine(
-        (data) => data.content.trim().length > 0,
-        { message: "Message content cannot be empty", path: ["content"] }
-    )
-    .refine(
-        (data) => data.receiverId.trim().length > 0,
-        { message: "User ID cannot be empty", path: ["userId"] }
-    )
-    .refine(
-        (data) => data.content.length <= 500,
-        { message: "Message content must not exceed 500 characters", path: ["content"] }
-    );
-
-export const messageGroupsBaseSchema = z.object({
-    name: z.string().min(1, "Group name is required").max(100, "Group name must not exceed 100 characters"),
-    members: z.array(z.string().min(1, "User ID is required")),
-    description: z.string().max(500, "Description must not exceed 500 characters").optional(),
-    isPublic: z.boolean().optional().default(false)
-});
-
-export const messageGroupsSchema = messageGroupsBaseSchema
-    .refine(data => data.members.length > 0, {
-        message: "At least one member is required",
-        path: ["members"]
-    })
-    .refine(data => data.name.trim().length > 0, {
-        message: "Group name cannot be empty",
-        path: ["name"]
-    })
-    .refine(data => data.name.length <= 100, {
-        message: "Group name must not exceed 100 characters",
-        path: ["name"]
-    })
-    .refine(data => data.description ? data.description.length <= 500 : true, {
-        message: "Description must not exceed 500 characters",
-        path: ["description"]
-    })
-    .refine(data => data.members.every(member => member.trim().length > 0), {
-        message: "All member IDs must be non-empty strings",
-        path: ["members"]
-    });
-
-export const groupMessageSchema = z.object({
-    content: z.string().min(1, "Message content is required").max(500, "Message content must not exceed 500 characters")
-});
+export const friendshipSchema = z.object({
+    userId: z.string().min(1, "User ID is required"),
+    friendId: z.string().min(1, "Friend ID is required"),
+    status: z.enum(['PENDING', 'ACCEPTED', 'BLOCKED', 'DECLINED']).default('PENDING'),
+}).refine(
+    (data) => data.userId !== data.friendId,
+    {
+        message: "User ID and Friend ID cannot be the same.",
+        path: ['friendId'],
+    }
+);
 
 export const conversationThreadSchema = z.object({
-    userAId: z.string().min(1, "User A ID is required").optional(),
-    userBId: z.string().min(1, "User B ID is required").optional(),
-    groupId: z.string().min(1, "Group ID is required").optional(),
-    type: z.enum(['PRIVATE', 'GROUP']),
+    threadId: z.string().min(1, "Thread ID is required"),
+    content: z.string().min(1, "Content is required").max(5000),
+    senderId: z.string().min(1, "Sender ID is required")
+})
+
+export const threadSchema = z.object({
+    name: z.string().min(1, "Thread name is required").max(100),
+    creatorId: z.string().min(1, "Creator ID is required").optional(),
+    participantIds: z.array(z.string().min(1, "Participant ID is required")).optional(),
+    type: z.enum(['PRIVATE', 'GROUP']).default('PRIVATE'),
+})
+    .refine(
+        (data) =>
+            (data.type === 'PRIVATE' && (data.participantIds?.length === 1)) ||
+            (data.type === 'GROUP' && ((data.participantIds?.length ?? 0) >= 2)),
+        {
+            message: "For PRIVATE, exactly one participant is required (the interlocutor). For GROUP, at least two participants are required.",
+            path: ['type'],
+        }
+    );
+
+export const threadParticipantSchema = z.object({
+    threadId: z.string().min(1, "Thread ID is required"),
+    participantId: z.string().min(1, "User ID is required"),
+    isRead: z.boolean().optional(),
+    isDeleted: z.boolean().optional(),
 }).refine(
-    (data) =>
-        (data.type === 'PRIVATE' && !!data.userAId && !!data.userBId && !data.groupId) ||
-        (data.type === 'GROUP' && !!data.groupId && !data.userAId && !data.userBId),
+    (data) => !!data.threadId && !!data.participantId,
     {
-        message: "For PRIVATE, userAId and userBId are required and groupId must be empty. For GROUP, groupId is required and userAId/userBId must be empty.",
-        path: ['type'],
+        message: "Both threadId and userId are required.",
+        path: ['threadId', 'userId'],
     }
 );
 
@@ -124,20 +141,6 @@ export const logoutSchema = z.object({
     token: z.string().min(1, "Token is required")
 });
 
-export const imageSchema = z.object({
-    image: z.instanceof(File).refine(file => file.size <= 5 * 1024 * 1024, {
-        message: "Image size must not exceed 5MB"
-    }).refine(file => ['image/jpeg', 'image/png', 'image/gif'].includes(file.type), {
-        message: "Image must be in JPEG, PNG, or GIF format"
-    })
-});
-
-export const fileSchema = z.object({
-    file: z.instanceof(File).refine(file => file.size <= 10 * 1024 * 1024, {
-        message: "File size must not exceed 10MB"
-    }).refine(file => ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'].includes(file.type), {
-        message: "File must be in PDF or Word format"
-    })
-});
-
 export const tokenSchema = z.string().min(1, "Token is required");
+
+

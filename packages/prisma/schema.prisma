@@ -45,6 +45,8 @@ model User {
   friendships          Friendship[]        @relation("UserFriendships")
   friendOf             Friendship[]        @relation("FriendOfFriendships")
   initiatedFriendships Friendship[]        @relation("InitiatorFriendships")
+
+  deletedConversation ConversationDelete[]
 }
 
 model Profile {
@@ -101,6 +103,11 @@ model Biodata {
   @@map("biodata")
 }
 
+enum ThreadType {
+  PRIVATE
+  GROUP
+}
+
 /// Thread untuk percakapan (PRIVATE atau GROUP)
 model Thread {
   id        String     @id @default(cuid())
@@ -119,11 +126,6 @@ model Thread {
   messages     Conversation[]
 
   @@index([type])
-}
-
-enum ThreadType {
-  PRIVATE
-  GROUP
 }
 
 model ThreadParticipant {
@@ -147,8 +149,14 @@ model Conversation {
   threadId  String
   senderId  String
   createdAt DateTime @default(now()) @map("created_at")
+
+  isDeleted            Boolean              @default(false) @map("is_deleted")
+  deletedAt            DateTime?            @map("deleted_at")
+  isDeletedBySender    Boolean              @default(false)
+  deletedByParticipant ConversationDelete[]
+
   updatedAt DateTime @updatedAt @map("updated_at")
-  isDeleted Boolean  @default(false) @map("is_deleted")
+  isEdited  Boolean  @default(false) @map("is_edited")
 
   content String @db.Text
 
@@ -157,4 +165,17 @@ model Conversation {
 
   @@index([threadId])
   @@index([senderId])
+}
+
+model ConversationDelete {
+  id             String   @id @default(cuid())
+  conversationId String
+  userId         String
+  deletedAt      DateTime @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+  @@index([userId])
 }

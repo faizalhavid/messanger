@@ -1,44 +1,76 @@
 import { prismaClient } from "@messanger/prisma";
-import { UserPublic } from "@messanger/types";
+import { UserModelMapper, UserProfileRequest, UserProfileSchema, UserProfileThread } from "@messanger/types";
 import { HTTPException } from "hono/http-exception";
 import { tokenSchema } from "@messanger/types";
 
 export class UserService {
     private static userRepository = prismaClient.user;
+    private static userProfileRepository = prismaClient.profile;
+    private static PENDING_TIME_ROLLBACK_DELETED_USER_STATUS = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 
-    static async getUser(token?: string): Promise<UserPublic> {
-        console.log("Fetching user with token:", token);
-        const parsedToken = tokenSchema.parse(token);
-        const user = await this.userRepository.findFirst({ where: { token: parsedToken } });
-        if (!user) throw new HTTPException(403, { message: "Invalid token or user not found" });
-        return UserPublic.fromUser(user);
+    static async getUserProfile(userId: string): Promise<UserProfileThread> {
+        const user = await this.userRepository.findUnique({ where: { id: userId } });
+        if (!user) throw new HTTPException(404, { message: "User not found" });
+        return UserModelMapper.fromUserToUserProfile(user);
     }
-    // static async updateUser(token: string, req: { firstName: string; lastName: string; avatar?: string }): Promise<UserPublic> {
-    //     const parsedToken = AuthValidation.TOKEN.parse(token);
-    //     req = UserValidation.PROFILE.parse(req);
 
-    //     const user = await this.userRepository.findFirst({ where: { token: parsedToken } });
-    //     if (!user) throw new HTTPException(403, { message: "Invalid token or user not found" });
+    static async getUserByToken(token: string): Promise<UserProfileThread> {
+        const validatedToken = tokenSchema.parse(token);
+        const user = await this.userRepository.findFirst({ where: { token: validatedToken } });
+        if (!user) throw new HTTPException(404, { message: "User not found" });
+        return UserModelMapper.fromUserToUserProfile(user);
+    }
 
-    //     const updatedUser = await this.userRepository.update({
-    //         where: { id: user.id },
-    //         data: {
-    //             firstName: req.firstName,
-    //             lastName: req.lastName,
-    //             avatar: req.avatar
-    //         },
-    //         include: { user: true }
-    //     });
+    static async updateUserProfile(userId: string, req: UserProfileRequest): Promise<UserProfileThread> {
+        const validatedData = UserProfileSchema.parse(req);
+        const user = await this.userRepository.findUnique({ where: { id: userId } });
+        if (!user) throw new HTTPException(404, { message: "User not found" });
+        const updatedUser = await this.userRepository.update({
+            where: { id: userId },
+            data: {
+                username: validatedData.username,
+                profile: {
+                    update: {
+                        avatar: validatedData.avatar?.url,
+                    }
+                }
+            }
+        });
 
-    //     return UserPublic.fromUser(updatedUser);
-    // }
+        return UserModelMapper.fromUserToUserProfile(updatedUser);
+    }
 
-    // static async deleteUser(token: string): Promise<void> {
-    //     const parsedToken = AuthValidation.TOKEN.parse(token);
-    //     const user = await this.userRepository.findFirst({ where: { token: parsedToken } });
-    //     if (!user) throw new HTTPException(403, { message: "Invalid token or user not found" });
+    static async updateActivateUser(userId: string, status: boolean): Promise<void> {
+        const user = await this.userRepository.findUnique({ where: { id: userId } });
+        if (!user) throw new HTTPException(404, { message: "User not found" });
+        await this.userRepository.update({
+            where: { id: userId },
+            data: {
+                isActive: status,
+            }
+        });
+    }
 
-    //     await this.userRepository.delete({ where: { userId: user.id } });
-    // }
+    static async updateDeleteUserStatus(userId: string, status: boolean): Promise<void> {
+        const user = await this.userRepository.findUnique({ where: { id: userId } });
+        if (!user) throw new HTTPException(404, { message: "User not found" });
+        if (user.deletedAt && !status) {
+            throw new HTTPException(400, { message: "User is already deleted" });
+        }
+        if (!user.deletedAt && status) {
+            throw new HTTPException(400, { message: "User is not deleted" });
+        }
+
+        if (user.deletedAt && (user.deletedAt > new Date(Date.now() - this.PENDING_TIME_ROLLBACK_DELETED_USER_STATUS))) {
+            throw new HTTPException(400, { message: "User cannot be deleted within 24 hours of deletion" });
+        }
+        await this.userRepository.update({
+            where: { id: userId },
+            data: {
+                isDeleted: status,
+                deletedAt: status ? new Date() : null,
+            }
+        });
+    }
 
 }

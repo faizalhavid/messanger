@@ -1,10 +1,10 @@
-import type { Conversation, Thread } from '@prisma/client';
-import { ConversationModelMapper, type ConversationPublic, type UserProfileThread } from 'packages/types';
+import type { Conversation, Thread, User, Profile } from '@prisma/client';
+import { ConversationModelMapper, UserModelMapper, type ConversationPublic, type UserProfileThread } from 'packages/types';
 
 export interface ThreadRequest {
+  name?: string;
   creatorId?: string;
-  interlocutorId?: string;
-  groupId?: string;
+  participantIds?: string[];
   type: ThreadType;
 }
 
@@ -18,42 +18,44 @@ export interface ThreadPublic extends Omit<Thread, 'creatorId'> {
 }
 
 export interface ThreadList extends ThreadPublic {
-  lastConversation?: Omit<Conversation, 'senderId'>;
+  lastConversation?: ConversationPublic;
   updatedAt: Date;
   unreadCount?: number;
   participants?: UserProfileThread[];
 }
 
-export interface ThreadConversationList extends ThreadPublic {
+export interface ThreadConversationList {
+  thread?: ThreadPublic;
   conversations: ConversationPublic[];
 }
 
 export namespace ThreadModelMapper {
-  export function fromThreadToThreadPublic(thread: Thread & { creator?: UserProfileThread }): ThreadPublic {
+  export function fromThreadToThreadPublic(thread: Thread & { creator?: User & { profile?: Profile } }): ThreadPublic {
     const { creatorId, ...rest } = thread;
     return {
       ...rest,
-      creator: thread.creator ? { ...thread.creator } : undefined,
+      creator: thread.creator ? UserModelMapper.fromUserToUserProfileThread(thread.creator) : undefined,
     };
   }
 
-  export function fromThreadToThreadList(thread: Thread & { creator?: UserProfileThread }, lastConversation?: Omit<Conversation, 'senderId'>, unreadCount: number = 0, participants?: UserProfileThread[]): ThreadList {
-    const { creatorId, ...rest } = thread;
+  export function fromThreadToThreadList(thread: Thread & { creator?: User & { profile?: Profile } }, lastConversation?: Conversation & { sender: User & { profile: Profile } }, unreadCount?: number, participants?: (User & { profile?: Profile })[]): ThreadList {
+    const { creatorId, creator, ...rest } = thread;
     return {
       ...rest,
-      creator: thread.creator ? { ...thread.creator } : undefined,
-      lastConversation: lastConversation,
+      creator: creator ? UserModelMapper.fromUserToUserProfileThread(creator) : undefined,
+      // TODO : even if lastConversation is undefined, we should still return undefined for lastConversation
+      lastConversation: lastConversation
+        ? ConversationModelMapper.fromConversationToConversationPublic(lastConversation)
+        : undefined,
       updatedAt: lastConversation?.createdAt ?? lastConversation?.updatedAt ?? new Date(),
       unreadCount,
-      participants,
+      participants: participants?.map(UserModelMapper.fromUserToUserProfileThread),
     };
   }
 
-  export function fromThreadToThreadConversationList(thread: Thread & { creator?: UserProfileThread }, conversations: (Conversation & { receiver: any })[]): ThreadConversationList {
-    const { creatorId, ...rest } = thread;
+  export function fromThreadToThreadConversationList(conversations: (Conversation & { sender: User & { profile: Profile } })[], thread?: Thread): ThreadConversationList {
     return {
-      ...rest,
-      creator: thread.creator ? { ...thread.creator } : undefined,
+      thread: thread ? ThreadModelMapper.fromThreadToThreadPublic(thread) : undefined,
       conversations: conversations.map((conversation) => ConversationModelMapper.fromConversationToConversationPublic(conversation)),
     };
   }

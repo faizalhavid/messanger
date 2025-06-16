@@ -2,7 +2,8 @@ import type { Conversation, Profile, User } from '@prisma/client';
 
 export type ConversationRequest = {
   content: string;
-  receiverId: string;
+  senderId: string;
+  threadId: string;
 };
 
 export interface ConversationUserProfile {
@@ -25,11 +26,11 @@ export namespace ConversationModelMapper {
     };
   }
 
-  export function fromConversationToConversationPublic(conversation: Conversation & { receiver: User }): ConversationPublic {
+  export function fromConversationToConversationPublic(conversation: Conversation & { sender: User & { profile: Profile } }): ConversationPublic {
     const { threadId, updatedAt, ...rest } = conversation;
     return {
       ...rest,
-      sender: fromUserToConversationUserProfile(conversation.receiver),
+      sender: fromUserToConversationUserProfile(conversation.sender),
     };
   }
 }

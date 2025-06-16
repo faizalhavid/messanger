@@ -119,17 +119,15 @@ export class ConversationTest {
         id: string;
         content: string;
         senderId: string;
-        receiverId: string;
         threadId: string;
     }) {
-        const { id, content, senderId, receiverId, threadId } = props;
+        const { id, content, senderId, threadId } = props;
         await prismaClient.conversation.create({
             data: {
                 id: id,
                 content: content,
                 senderId: senderId,
-                receiverId: receiverId,
-                conversationThreadId: threadId
+                threadId: threadId
             }
         });
     }
@@ -138,7 +136,6 @@ export class ConversationTest {
             where: {
                 OR: [
                     { senderId: userId },
-                    { receiverId: userId }
                 ]
             }
         });
@@ -149,89 +146,92 @@ export class ConversationTest {
     }
 }
 
-export class ConversationThreadTest {
+export class ThreadTest {
     static async create(props: {
         id: string;
         type: 'PRIVATE' | 'GROUP';
-        userAId?: string;
-        userBId?: string;
+        creatorId: string;
+        participantIds?: string[];
     }) {
-        const { id, type, userAId, userBId } = props;
+        const { id, type, creatorId, participantIds } = props;
 
-        if (!userAId || !userBId) {
-            throw new Error("userAId and userBId are required for creating a conversation thread.");
-        }
-
-        const data = await prismaClient.conversationThread.create({
+        const data = await prismaClient.thread.create({
             data: {
                 id: id,
                 type: type,
-                userAId: userAId,
-                userBId: userBId,
+                creatorId: creatorId,
+                participants: {
+                    create: participantIds?.map(userId => ({ userId })) || []
+                }
             }
         });
         return data;
     }
 
     static async deleteAll() {
-        await prismaClient.conversationThread.deleteMany();
+        await prismaClient.thread.deleteMany();
     }
 }
 
-export class ConversationGroupsTest {
+export class ThreadParticipantsTest {
     static async create(props: {
         id: string;
-        name: string;
-        ownerId: string;
-        memberIds: string[];
+        threadId: string;
+        userId: string;
     }) {
-        const { id, name, ownerId, memberIds: members } = props;
-        try {
-            await prismaClient.conversationGroup.create({
-                data: {
-                    id: id,
-                    name: name,
-                    ownerId: ownerId,
-                    members: {
-                        create: members.map(userId => ({
-                            user: { connect: { id: userId } }
-                        }))
-                    }
-                }
-            });
-        } catch (err) {
-            console.error('Failed to create message group:', err);
-            throw err;
-        }
-    }
-
-    static async clearAllGroups() {
-        await prismaClient.conversationGroup.deleteMany({});
-    }
-}
-
-export class ConversationGroupsMessagesTest {
-    static async create(props: {
-        id: string;
-        messageId: string;
-        senderId: string;
-        groupId: string;
-    }) {
-        const { id, messageId, senderId, groupId } = props;
-        await prismaClient.conversationGroupMessages.create({
+        const { id, threadId, userId } = props;
+        await prismaClient.threadParticipant.create({
             data: {
                 id: id,
-                conversationId: messageId,
-                groupId: groupId
+                threadId: threadId,
+                userId: userId
             }
         });
     }
 
-    static async clearAllMessages(groupId: string) {
-        await prismaClient.conversationGroupMessages.deleteMany({
+    static async deleteAllByThread(threadId: string) {
+        await prismaClient.threadParticipant.deleteMany({
             where: {
-                groupId: groupId
+                threadId: threadId
             }
         });
+    }
+
+    static async deleteAll() {
+        await prismaClient.threadParticipant.deleteMany({});
+    }
+}
+export class FriendshipTest {
+    static async create(props: {
+        id: string;
+        userId: string;
+        friendId: string;
+        status?: 'PENDING' | 'ACCEPTED' | 'DECLINED';
+    }) {
+        const { id, userId, friendId, status } = props;
+        await prismaClient.friendship.create({
+            data: {
+                id: id,
+                userId: userId,
+                friendId: friendId,
+                initiatorId: userId, // Assuming the userId is the initiator
+                status: status || 'PENDING'
+            }
+        });
+    }
+
+    static async deleteAllByUser(userId: string) {
+        await prismaClient.friendship.deleteMany({
+            where: {
+                OR: [
+                    { userId: userId },
+                    { friendId: userId }
+                ]
+            }
+        });
+    }
+
+    static async deleteAll() {
+        await prismaClient.friendship.deleteMany({});
     }
 }

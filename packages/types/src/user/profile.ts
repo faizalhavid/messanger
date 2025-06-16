@@ -1,6 +1,6 @@
 import type { User, Profile, Biodata } from "@prisma/client";
 import { BiodataPublic } from "./bio";
-import { UserPublic } from "./user";
+import { UserModelMapper } from "./user";
 
 export interface ProfileRequest {
     firstName: string;

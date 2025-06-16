@@ -1,4 +1,4 @@
-import type { UserPublic } from "../user/user";
+import type { UserModelMapper } from "../user/user";
 
 
 export type LoginRequest = (
@@ -12,5 +12,5 @@ export interface LoginResponse {
     // Todo Create a Table for Tokens and then use that here
     // token: TokenPublic;
     token: string;
-    user: UserPublic;
+    user: UserModelMapper;
 }

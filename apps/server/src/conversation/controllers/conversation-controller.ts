@@ -1,47 +1,49 @@
-import { ConversationQueryParams, HonoContext, ListUserConversationsResponse, WsTopic } from '@messanger/types';
+import { ConversationPublic, HonoContext, WsTopic } from '@messanger/types';
 import { Hono } from 'hono';
 import { ConversationService } from '../services/conversation-service';
-import { BaseApiResponse, PaginatedResponse } from '@messanger/types';
-import { ConversationModelMapper } from '@messanger/types';
-import { WsBroadcastEvent, WsEventName } from '@messanger/types';
+import { BaseApiResponse } from '@messanger/types';
+import { WsEventName } from '@messanger/types';
 import { server } from 'src';
-import { randomUUID } from 'crypto';
 import { generateWSBroadcastPayload } from 'src/websocket/config';
 
 export const conversationController = new Hono<{ Variables: HonoContext }>();
 
 conversationController.post('/', async (c) => {
-  const user = c.get('authenticatedUser');
+    const user = c.get('authenticatedUser');
 
-  const request = await c.req.json();
-  const result = await ConversationService.createConversation(request, user.id);
+    const request = await c.req.json();
+    const threadId = c.req.query('threadId');
+    if (!threadId) {
+        return c.json({ success: false, message: 'Missing thread id', data: null }, 400);
+    }
+    const result = await ConversationService.createConversationInThread(request, threadId, user.id);
 
-  const broadcastPayload = generateWSBroadcastPayload<ConversationModelMapper>(result, WsEventName.ConversationCreated);
+    const broadcastPayload = generateWSBroadcastPayload<ConversationPublic>(result, WsEventName.ConversationCreated);
 
-  const response: BaseApiResponse = {
-    success: true,
-    message: 'Message sent successfully',
-    data: result,
-  };
-  server.publish(WsTopic.Conversations, JSON.stringify(broadcastPayload));
-  console.log('Broadcasting message to topic:', WsTopic.Conversations, 'Payload:', broadcastPayload);
-  return c.json(response);
+    const response: BaseApiResponse = {
+        success: true,
+        message: 'Message sent successfully',
+        data: result,
+    };
+    server.publish(WsTopic.Conversations, JSON.stringify(broadcastPayload));
+    console.log('Broadcasting message to topic:', WsTopic.Conversations, 'Payload:', broadcastPayload);
+    return c.json(response);
 });
 
 conversationController.delete('/:id', async (c) => {
-  const user = c.get('authenticatedUser');
-  const messageId = c.req.param('id');
-  const broadcastPayload = generateWSBroadcastPayload<{ messageId: string; userId: string }>({ messageId, userId: user.id }, WsEventName.ConversationDeleted);
-  await ConversationService.deleteMessage(messageId, user.id);
+    const user = c.get('authenticatedUser');
+    const messageId = c.req.param('id');
+    const broadcastPayload = generateWSBroadcastPayload<{ messageId: string; userId: string }>({ messageId, userId: user.id }, WsEventName.ConversationDeleted);
+    await ConversationService.deleteConversationInThread(messageId, user.id);
 
-  server.publish(WsTopic.Conversations, JSON.stringify(broadcastPayload));
+    server.publish(WsTopic.Conversations, JSON.stringify(broadcastPayload));
 
-  const response: BaseApiResponse = {
-    success: true,
-    message: 'Message deleted successfully',
-    data: null,
-  };
-  return c.json(response);
+    const response: BaseApiResponse = {
+        success: true,
+        message: 'Message deleted successfully',
+        data: null,
+    };
+    return c.json(response);
 });
 
 /* 

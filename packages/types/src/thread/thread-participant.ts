@@ -1,39 +1,54 @@
-import type { Thread, ThreadParticipant, User } from '@prisma/client';
+import type { Thread, ThreadParticipant, User, Profile } from '@prisma/client';
 import { ThreadModelMapper, type ThreadPublic } from './thread';
 import type { UserProfileThread } from 'packages/types';
 
 export interface ThreadParticipantsRequest {
-  threadId: string;
-  userId: string;
+  // threadId: string;
+  participantId: string;
+  isRead?: boolean;
+  isDeleted?: boolean;
 }
 
 export interface ThreadParticipantPublic extends Omit<ThreadParticipant, 'userId' | 'threadId'> {
   user?: UserProfileThread;
-  thread: ThreadPublic;
+  thread?: ThreadPublic;
 }
 
-export interface ThreadParticipantList extends Omit<ThreadParticipantPublic, 'user'> {
-  totalParticipants: number;
-  participants: UserProfileThread[];
-}
+// export interface ThreadParticipantList {
+//   totalParticipants: number;
+//   participant: Omit<ThreadParticipantPublic, "thread">;
+// }
 
 export namespace ThreadParticipantModelMapper {
-  export function fromThreadParticipantToThreadParticipantPublic(participant: ThreadParticipant & { user?: User; thread: Thread }): ThreadParticipantPublic {
+  export function fromThreadParticipantToThreadParticipantPublic(participant: ThreadParticipant & { user?: User; thread?: Thread }): ThreadParticipantPublic {
     const { userId, threadId, ...rest } = participant;
 
     return {
       ...rest,
       user: participant.user ? { ...participant.user } : undefined,
-      thread: ThreadModelMapper.fromThreadToThreadPublic(participant.thread),
+      thread: participant.thread ? ThreadModelMapper.fromThreadToThreadPublic(participant.thread) : undefined,
     };
   }
 
-  export function fromThreadParticipantToThreadParticipantList(participant: ThreadParticipant & { user?: User; thread: Thread }, participants: UserProfileThread[]): ThreadParticipantList {
-    const { userId, threadId, ...rest } = participant;
+  export function fromThreadParticipantToUserProfileThread(participant: ThreadParticipant & { user?: User & { profile?: Profile } }): UserProfileThread | undefined {
+    if (!participant.user) return undefined;
+
+    const { id, username, profile } = participant.user;
     return {
-      ...rest,
-      totalParticipants: participants.length,
-      participants,
+      id,
+      username,
+      avatar: profile?.avatar ?? null,
     };
   }
+
+  // export function fromThreadParticipantToThreadParticipantList(
+  //   participants: (ThreadParticipant & { user?: User & { profile?: Profile } })[],
+  // ): ThreadParticipantList {
+  //   return {
+  //     totalParticipants: participants.length,
+  //     participants: participants
+  //       .map(participant => fromThreadParticipantToThreadParticipantPublic({ ...participant }))
+  //       .filter((user): user is ThreadParticipantPublic => !!user),
+  //   };
+  // }
 }

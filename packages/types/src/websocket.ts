@@ -1,4 +1,4 @@
-import { UserPublic } from "@messanger/types";
+import { UserModelMapper } from "@messanger/types";
 import { WSContext } from "hono/ws";
 
 export enum WsEventName {
@@ -31,7 +31,7 @@ export enum WsTopic {
 
 export type AppWSContext = WSContext<unknown> & {
     data?: {
-        user?: UserPublic,
+        user?: UserModelMapper,
         topic: WsTopic,
         isAuthenticated: boolean
     }
