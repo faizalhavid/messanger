@@ -146,6 +146,37 @@ export class ConversationTest {
     }
 }
 
+export class ConversationStatusTest {
+    static async create(props: {
+        id: string;
+        userId: string;
+        conversationId: string;
+        isDeleted?: boolean;
+    }) {
+        const { id, userId, conversationId, isDeleted } = props;
+        await prismaClient.conversationStatus.create({
+            data: {
+                id: id,
+                userId: userId,
+                conversationId: conversationId,
+                isDeleted: isDeleted || false
+            }
+        });
+    }
+
+    static async deleteAllByUser(userId: string) {
+        await prismaClient.conversationStatus.deleteMany({
+            where: {
+                userId: userId
+            }
+        });
+    }
+
+    static async deleteAll() {
+        await prismaClient.conversationStatus.deleteMany({});
+    }
+}
+
 export class ThreadTest {
     static async create(props: {
         id: string;

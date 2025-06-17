@@ -46,7 +46,11 @@ model User {
   friendOf             Friendship[]        @relation("FriendOfFriendships")
   initiatedFriendships Friendship[]        @relation("InitiatorFriendships")
 
-  deletedConversation ConversationDelete[]
+  conversationStatus ConversationStatus[]
+
+  @@index([username], name: "idx_username")
+  @@index([email], name: "idx_email")
+  @@map("users")
 }
 
 model Profile {
@@ -137,7 +141,6 @@ model ThreadParticipant {
 
   // Soft delete, read flag, dll.
   isDeleted Boolean   @default(false) @map("is_deleted")
-  isRead    Boolean   @default(false) @map("is_read")
   deletedAt DateTime? @map("deleted_at")
 
   @@unique([threadId, userId])
@@ -145,37 +148,40 @@ model ThreadParticipant {
 }
 
 model Conversation {
-  id        String   @id @default(cuid())
-  threadId  String
-  senderId  String
-  createdAt DateTime @default(now()) @map("created_at")
-
-  isDeleted            Boolean              @default(false) @map("is_deleted")
-  deletedAt            DateTime?            @map("deleted_at")
-  isDeletedBySender    Boolean              @default(false)
-  deletedByParticipant ConversationDelete[]
-
-  updatedAt DateTime @updatedAt @map("updated_at")
-  isEdited  Boolean  @default(false) @map("is_edited")
+  id                String    @id @default(cuid())
+  threadId          String
+  senderId          String
+  createdAt         DateTime  @default(now()) @map("created_at")
+  isDeletedBySender Boolean   @default(false) @map("is_deleted_by_sender")
+  deletedAtBySender DateTime? @map("deleted_at_by_sender")
 
   content String @db.Text
 
   thread Thread @relation(fields: [threadId], references: [id], onDelete: Cascade)
   sender User   @relation("SentConversations", fields: [senderId], references: [id], onDelete: Cascade)
 
+  conversationStatus ConversationStatus[]
+
   @@index([threadId])
   @@index([senderId])
 }
 
-model ConversationDelete {
-  id             String   @id @default(cuid())
+model ConversationStatus {
+  id             String    @id @default(cuid())
   conversationId String
   userId         String
-  deletedAt      DateTime @default(now())
+  isRead         Boolean   @default(false)
+  isDeleted      Boolean   @default(false)
+  isEdited       Boolean   @default(false)
+  updatedAt      DateTime  @updatedAt
+  readAt         DateTime?
+  deletedAt      DateTime?
+  editedAt       DateTime?
 
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([conversationId, userId])
   @@index([userId])
+  @@map("conversation_status")
 }

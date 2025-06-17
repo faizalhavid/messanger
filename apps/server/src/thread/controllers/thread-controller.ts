@@ -26,7 +26,7 @@ controller.get("/:id", async (c) => {
     return c.json({
         success: true,
         message: "Thread retrieved successfully",
-        data: { meta, items, thread }
+        data: { thread, items, meta }
     });
 })
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "bun:test";
-import { UserTest, usersTest, ProfileTest, ThreadTest, ConversationTest } from "./test-utils";
+import { UserTest, usersTest, ProfileTest, ThreadTest, ConversationTest, ConversationStatusTest } from "./test-utils";
 
 
 describe('Thread API', () => {
@@ -85,6 +85,12 @@ describe('Thread API', () => {
             senderId: usersTest[0].id,
             threadId: 'thread-1'
         });
+        await ConversationStatusTest.create({
+            id: 'status-1',
+            userId: usersTest[0].id,
+            conversationId: 'conversation-1',
+            isDeleted: false
+        });
         await ThreadTest.create({
             id: 'thread-2',
             type: 'GROUP',
@@ -96,6 +102,12 @@ describe('Thread API', () => {
             content: 'This is a group conversation',
             senderId: usersTest[1].id,
             threadId: 'thread-2'
+        });
+        await ConversationStatusTest.create({
+            id: 'status-2',
+            userId: usersTest[1].id,
+            conversationId: 'conversation-2',
+            isDeleted: false
         });
         const response = await fetch('http://localhost:3000/api/threads', {
             method: 'GET',
@@ -118,11 +130,37 @@ describe('Thread API', () => {
             creatorId: usersTest[0].id,
             participantIds: [usersTest[1].id]
         });
+        await ConversationTest.create({
+            id: 'conversation-1',
+            content: 'This is a test conversation',
+            senderId: usersTest[0].id,
+            threadId: thread.id
+        });
+        await ConversationStatusTest.create({
+            id: 'status-1',
+            userId: usersTest[0].id,
+            conversationId: 'conversation-1',
+            isDeleted: false
+        });
+        await ConversationTest.create({
+            id: 'conversation-2',
+            content: 'This is another conversation',
+            senderId: usersTest[1].id,
+            threadId: thread.id
+        });
+        await ConversationStatusTest.create({
+            id: 'status-2',
+            userId: usersTest[1].id,
+            conversationId: 'conversation-2',
+            isDeleted: false
+        });
         const response = await fetch(`http://localhost:3000/api/threads/${thread.id}`, {
             method: 'GET',
             headers: { 'Authorization': usersTest[0].token }
         });
+        console.log("Response :", response);
         const body = await response.json();
+        console.log("Response body :", body);
         expect(response.status).toBe(200);
         expect(body.success).toBe(true);
         expect(body.data).toBeDefined();
@@ -198,6 +236,8 @@ describe('Thread API', () => {
         await UserTest.delete(usersTest[1].username);
         await ProfileTest.delete(usersTest[0].username);
         await ProfileTest.delete(usersTest[1].username);
+        await ConversationTest.deleteAll();
+        await ConversationStatusTest.deleteAll();
     });
 });
 afterEach(async () => {

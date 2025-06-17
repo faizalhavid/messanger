@@ -10,6 +10,7 @@ export class ThreadService {
     private static threadRepository = prismaClient.thread;
     private static threadParticipantRepository = prismaClient.threadParticipant;
     private static conversationRepository = prismaClient.conversation;
+    private static conversationStatusRepository = prismaClient.conversationStatus;
 
     static async getThreads(userId: string, queryParams: ConversationQueryParams): Promise<PaginatedData<ThreadList>> {
         const { sortBy = 'createdAt', sortOrder = 'desc', page = 1, pageSize = 10, search, ...rest } = queryParams;
@@ -45,7 +46,15 @@ export class ThreadService {
                     include: { profile: true }
                 },
                 messages: {
-                    include: { sender: { include: { profile: true } } },
+                    take: 1,
+                    orderBy: { createdAt: 'desc' },
+                    include: {
+                        sender: { include: { profile: true } },
+                        // conversationStatus: {
+                        //     where: { userId, isDeleted: false }
+                        // },
+                    },
+                    where: { conversationStatus: { some: { userId, isDeleted: false } } },
                 },
                 participants: {
                     where: { isDeleted: false },
@@ -53,8 +62,6 @@ export class ThreadService {
                 },
             },
         });
-
-
 
         const meta: PaginationMeta = {
             totalItems,
@@ -65,21 +72,21 @@ export class ThreadService {
             hasPreviousPage: skip > 0,
         }
 
-        const unreadCounts = await this.threadParticipantRepository.groupBy({
-            by: ['threadId'],
-            _count: {
-                isRead: true,
-            },
+        const unreadCounts = await this.conversationStatusRepository.groupBy({
+            by: ['conversationId'],
+            _count: { conversationId: true },
             where: {
                 userId,
-                isDeleted: false,
-            },
+                isRead: false,
+                conversation: {
+                    threadId: { in: threads.map(t => t.id) }
+                }
+            }
         });
 
         const result = threads.map(thread => {
             const { messages, ...restThread } = thread;
-            const lastConversation = messages[messages.length - 1];
-            const unreadCount = unreadCounts.find(count => count.threadId === thread.id)?._count.isRead || 0;
+            const lastConversation = thread.messages[0];
             return ThreadModelMapper.fromThreadToThreadList(
                 {
                     ...restThread,
@@ -90,11 +97,18 @@ export class ThreadService {
                         }
                         : undefined,
                 },
-                {
-                    ...lastConversation,
-                    sender: lastConversation.sender.profile ?? undefined,
-                }
-                unreadCount,
+                lastConversation
+                    ? {
+                        ...lastConversation,
+                        sender: lastConversation.sender
+                            ? {
+                                ...lastConversation.sender,
+                                profile: lastConversation.sender.profile ?? undefined,
+                            }
+                            : undefined,
+                    }
+                    : undefined,
+                unreadCounts.find(uc => uc.conversationId === lastConversation?.id)?._count?.conversationId || 0,
                 thread.participants.map(p => p.user),
             );
         });
@@ -110,7 +124,7 @@ export class ThreadService {
         userId: string,
         queryParams: ConversationQueryParams
     ): Promise<PaginatedData<ThreadConversationList | null>> {
-        const { sortBy = 'updatedAt', sortOrder = 'desc', page = 1, pageSize = 10, search, ...rest } = queryParams;
+        const { sortBy = 'createdAt', sortOrder = 'desc', page = 1, pageSize = 10, search, ...rest } = queryParams;
         const skip = (page - 1) * pageSize;
         const take = pageSize;
 
@@ -139,7 +153,12 @@ export class ThreadService {
         const totalItems = await this.conversationRepository.count({
             where: {
                 threadId,
-                isDeleted: false,
+                conversationStatus: {
+                    some: {
+                        userId,
+                        isDeleted: false,
+                    },
+                },
                 content: search ? { contains: search, mode: 'insensitive' } : undefined,
             },
         });
@@ -150,7 +169,13 @@ export class ThreadService {
         const conversations = await this.conversationRepository.findMany({
             where: {
                 threadId,
-                isDeleted: false,
+                conversationStatus: {
+                    some: {
+                        // userId,
+                        isDeleted: false,
+                    },
+                },
+                isDeletedBySender: false,
                 content: search ? { contains: search, mode: 'insensitive' } : undefined,
             },
             skip,
@@ -159,6 +184,11 @@ export class ThreadService {
             include: {
                 sender: {
                     include: { profile: true }
+                },
+                conversationStatus: {
+                    where: { userId, isDeleted: false },
+                    take: 1,
+                    orderBy: { conversation: { createdAt: 'desc' } },
                 },
             },
         });
@@ -197,6 +227,7 @@ export class ThreadService {
             hasPreviousPage,
         };
 
+
         return {
             thread: ThreadModelMapper.fromThreadToThreadPublic({
                 ...thread,
@@ -206,8 +237,18 @@ export class ThreadService {
                 },
             }),
             items: ThreadModelMapper.fromThreadToThreadConversationList(
-                conversations,
-
+                conversations.map(conversation => ({
+                    ...conversation,
+                    sender: {
+                        ...conversation.sender,
+                        profile: conversation.sender.profile === null ? undefined : conversation.sender.profile,
+                    },
+                    status: conversation.conversationStatus[0] ? {
+                        ...conversation.conversationStatus[0],
+                        isDeleted: undefined, // Exclude isDeleted from the public model
+                    } : undefined,
+                })),
+                undefined
             ),
             meta
         };

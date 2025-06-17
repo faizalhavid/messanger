@@ -1,4 +1,4 @@
-import type { Conversation, Thread, User, Profile } from '@prisma/client';
+import type { Conversation, Thread, User, Profile, ConversationStatus } from '@prisma/client';
 import { ConversationModelMapper, UserModelMapper, type ConversationPublic, type UserProfileThread } from 'packages/types';
 
 export interface ThreadRequest {
@@ -19,7 +19,7 @@ export interface ThreadPublic extends Omit<Thread, 'creatorId'> {
 
 export interface ThreadList extends ThreadPublic {
   lastConversation?: ConversationPublic;
-  updatedAt: Date;
+  createdAt: Date;
   unreadCount?: number;
   participants?: UserProfileThread[];
 }
@@ -38,7 +38,7 @@ export namespace ThreadModelMapper {
     };
   }
 
-  export function fromThreadToThreadList(thread: Thread & { creator?: User & { profile?: Profile } }, lastConversation?: Conversation & { sender: User & { profile: Profile } }, unreadCount?: number, participants?: (User & { profile?: Profile })[]): ThreadList {
+  export function fromThreadToThreadList(thread: Thread & { creator?: User & { profile?: Profile } }, lastConversation?: Conversation & { sender?: User & { profile?: Profile } }, unreadCount?: number, participants?: (User & { profile?: Profile })[]): ThreadList {
     const { creatorId, creator, ...rest } = thread;
     return {
       ...rest,
@@ -47,16 +47,16 @@ export namespace ThreadModelMapper {
       lastConversation: lastConversation
         ? ConversationModelMapper.fromConversationToConversationPublic(lastConversation)
         : undefined,
-      updatedAt: lastConversation?.createdAt ?? lastConversation?.updatedAt ?? new Date(),
+      createdAt: lastConversation?.createdAt ?? new Date(),
       unreadCount,
       participants: participants?.map(UserModelMapper.fromUserToUserProfileThread),
     };
   }
 
-  export function fromThreadToThreadConversationList(conversations: (Conversation & { sender: User & { profile: Profile } })[], thread?: Thread): ThreadConversationList {
+  export function fromThreadToThreadConversationList(conversations?: (Conversation & { sender?: User & { profile?: Profile } & { status?: ConversationStatus } })[], thread?: Thread): ThreadConversationList {
     return {
       thread: thread ? ThreadModelMapper.fromThreadToThreadPublic(thread) : undefined,
-      conversations: conversations.map((conversation) => ConversationModelMapper.fromConversationToConversationPublic(conversation)),
+      conversations: conversations?.map((conversation) => ConversationModelMapper.fromConversationToConversationPublic(conversation)) ?? [],
     };
   }
 }
