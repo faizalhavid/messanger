@@ -1,16 +1,11 @@
 import type { Conversation, ConversationStatus, Profile, User } from '@prisma/client';
+import type { ConversationOverviewStatus, ConversationStatusPublic } from 'packages/types';
 
 export type ConversationRequest = {
   content: string;
   senderId: string;
   threadId: string;
 };
-
-export interface ConversationStatusPublic extends Omit<ConversationStatus, 'deletedAt' | 'createdAt' | 'editedAt' | 'readAt'> {
-
-}
-
-
 
 export interface ConversationUserProfile {
   id: string;
@@ -27,8 +22,8 @@ export interface ConversationPublic extends Omit<Conversation, 'updatedAt' | 'th
 export namespace ConversationModelMapper {
   export function fromUserToConversationUserProfile(user?: User & { profile?: Profile }): ConversationUserProfile {
     return {
-      id: user?.id ?? "",
-      username: user?.username ?? "",
+      id: user?.id ?? '',
+      username: user?.username ?? '',
       avatar: user?.profile?.avatar ?? null,
     };
   }

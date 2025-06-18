@@ -1,11 +1,13 @@
 import { send } from 'process';
 import { prismaClient } from '@messanger/prisma';
-import { ConversationRequest, ConversationModelMapper, conversationThreadSchema, ConversationQueryParams, PaginatedResponse, PaginatedData, ProfilePublic, ThreadConversationList, ThreadModelMapper, ConversationPublic, ThreadPublic } from '@messanger/types';
+import { ConversationRequest, ConversationModelMapper, conversationThreadSchema, ConversationPublic, ConversationOverviewStatus } from '@messanger/types';
+import { ConversationStatusService } from './conversation-status-service';
 
 export class ConversationService {
   private static conversationRepository = prismaClient.conversation;
-  private static conversationThreadRepository = prismaClient.thread;
-  private static conversationDeleteRepository = prismaClient.conversationDelete;
+  private static conversationStatusRepository = prismaClient.conversationStatus;
+  private static threadRepository = prismaClient.thread;
+  private static threadParticipantRepository = prismaClient.threadParticipant;
 
   // static async createConversationInThread(req: ConversationRequest, userId: string): Promise<{ thread: ThreadPublic, conversation: ConversationPublic }> {
   static async createConversationInThread(req: ConversationRequest, threadId: string, userId: string): Promise<ConversationPublic> {
@@ -21,16 +23,18 @@ export class ConversationService {
         content: validatedConversation.content,
       },
       include: {
-        thread: {
-          include: {
-            creator: {
-              include: { profile: true }
-            },
-          }
-        },
+        // thread: {
+        //   include: {
+        //     creator: {
+        //       include: { profile: true },
+        //     },
+        //   },
+        // },
         sender: { include: { profile: true } },
-      }
+      },
     });
+
+    ConversationStatusService.createConversationStatusForEachParticipants(conversation.id, threadId, userId);
 
     // return {
     //   thread: ThreadModelMapper.fromThreadToThreadPublic({
@@ -42,15 +46,16 @@ export class ConversationService {
     //   }),
     //   conversation: ConversationModelMapper.fromConversationToConversationPublic(conversation),
     // }
-    return ConversationModelMapper.fromConversationToConversationPublic(conversation);
+    return ConversationModelMapper.fromConversationToConversationPublic({
+      ...conversation,
+      sender: {
+        ...conversation.sender,
+        profile: conversation.sender.profile === null ? undefined : conversation.sender.profile,
+      },
+    });
   }
 
-  static async updateConversationInThread(
-    req: ConversationRequest,
-    threadId: string,
-    conversationId: string,
-    userId: string
-  ): Promise<ConversationPublic> {
+  static async updateConversationInThread(req: ConversationRequest, threadId: string, conversationId: string, userId: string): Promise<ConversationPublic> {
     const validatedData = conversationThreadSchema.parse({
       threadId: threadId,
       content: req.content,
@@ -62,22 +67,34 @@ export class ConversationService {
       data: {
         content: validatedData.content,
         senderId: validatedData.senderId,
-        isEdited: true,
-        updatedAt: new Date(),
       },
       include: {
-        thread: {
-          include: {
-            creator: {
-              include: { profile: true }
-            },
-          }
-        },
+        // thread: {
+        //   include: {
+        //     creator: {
+        //       include: { profile: true },
+        //     },
+        //   },
+        // },
         sender: { include: { profile: true } },
-      }
+      },
     });
 
-    return ConversationModelMapper.fromConversationToConversationPublic(conversation);
+    ConversationStatusService.updateConversationStatusByUserId(
+      {
+        isEdited: true,
+      },
+      conversation.id,
+      userId
+    );
+
+    return ConversationModelMapper.fromConversationToConversationPublic({
+      ...conversation,
+      sender: {
+        ...conversation.sender,
+        profile: conversation.sender.profile === null ? undefined : conversation.sender.profile,
+      },
+    });
   }
 
   static async deleteConversationInThread(conversationId: string, userId: string): Promise<ConversationPublic> {
@@ -86,7 +103,7 @@ export class ConversationService {
       include: {
         thread: { include: { creator: { include: { profile: true } } } },
         sender: { include: { profile: true } },
-      }
+      },
     });
 
     if (!conversation) throw new Error('Conversation not found');
@@ -94,24 +111,169 @@ export class ConversationService {
     if (conversation.senderId === userId) {
       const updated = await this.conversationRepository.update({
         where: { id: conversationId },
-        data: { isDeleted: true, isDeletedBySender: true, deletedAt: new Date() },
+        data: { isDeletedBySender: true, deletedAtBySender: new Date() },
         include: {
           thread: { include: { creator: { include: { profile: true } } } },
           sender: { include: { profile: true } },
-        }
+        },
       });
-      return ConversationModelMapper.fromConversationToConversationPublic(updated);
+      ConversationStatusService.updateConversationStatusByUserId(
+        {
+          isDeleted: true,
+        },
+        conversation.id,
+        userId
+      );
+      return ConversationModelMapper.fromConversationToConversationPublic({
+        ...updated,
+        sender: {
+          ...updated.sender,
+          profile: updated.sender.profile === null ? undefined : updated.sender.profile,
+        },
+      });
     }
 
-    await this.conversationDeleteRepository.create({
-      data: { conversationId, userId, deletedAt: new Date() }
-    });
+    ConversationStatusService.updateConversationStatusByUserId(
+      {
+        isDeleted: true,
+      },
+      conversation.id,
+      userId
+    );
 
-    return ConversationModelMapper.fromConversationToConversationPublic(conversation);
+    return ConversationModelMapper.fromConversationToConversationPublic({
+      ...conversation,
+      sender: {
+        ...conversation.sender,
+        profile: conversation.sender.profile === null ? undefined : conversation.sender.profile,
+      },
+    });
   }
 
+  static async deleteManyConversationsInThread(conversationIds: string[], userId: string): Promise<void> {
+    const conversations = await this.conversationRepository.findMany({
+      where: { id: { in: conversationIds } },
+      include: {
+        thread: { include: { creator: { include: { profile: true } } } },
+        sender: { include: { profile: true } },
+      },
+    });
 
-  /* 
+    if (conversations.length === 0) throw new Error('No conversations found');
+    conversations.map((conversation) => {
+      if (conversation.senderId === userId) {
+        return this.conversationRepository.update({
+          where: { id: conversation.id },
+          data: { isDeletedBySender: true, deletedAtBySender: new Date() },
+          include: {
+            thread: { include: { creator: { include: { profile: true } } } },
+            sender: { include: { profile: true } },
+          },
+        });
+      }
+      ConversationStatusService.updateConversationStatusByUserId(
+        {
+          isDeleted: true,
+        },
+        conversation.id,
+        userId
+      );
+      // return ConversationModelMapper.fromConversationToConversationPublic({
+      //   ...conversation,
+      //   sender: {
+      //     ...conversation.sender,
+      //     profile: conversation.sender.profile === null ? undefined : conversation.sender.profile,
+      //   },
+      // });
+    });
+  }
+
+  static async getConversationById(conversationId: string, threadId: string, userId: string): Promise<ConversationOverviewStatus> {
+    const conversation = await this.conversationRepository.findUnique({
+      where: { id: conversationId },
+      include: {
+        // thread: { include: { creator: { include: { profile: true } } } },
+        sender: { include: { profile: true } },
+        conversationStatus: true,
+      },
+    });
+
+    const counts = await this.conversationStatusRepository.aggregate({
+      where: { conversationId },
+      _count: {
+        isRead: true,
+        isEdited: true,
+        isDeleted: true,
+      },
+    });
+
+    if (!conversation) throw new Error('Conversation not found');
+
+    // if (conversation.senderId !== userId) {
+    //   ConversationStatusService.updateConversationStatusByUserId(
+    //     {
+    //       isRead: true,
+    //     },
+    //     conversation.id,
+    //     userId
+    //   );
+    // }
+
+    const conversationIds = await this.conversationRepository.findMany({
+      where: { threadId: threadId },
+      select: { id: true },
+    });
+    const ids = conversationIds.map((c) => c.id);
+
+    // Get all participant user IDs in the thread
+    const participantIds = await this.threadParticipantRepository.findMany({
+      where: { threadId: threadId, isDeleted: false },
+      select: { userId: true },
+    });
+    const userIds = participantIds.map((p) => p.userId);
+
+    // Count ConversationStatus for those conversations and users
+    const [countRead, countEdited, countDeleted] = await Promise.all([
+      this.conversationStatusRepository.count({
+        where: {
+          conversationId: { in: ids },
+          userId: { in: userIds },
+          isRead: true,
+        },
+      }),
+      this.conversationStatusRepository.count({
+        where: {
+          conversationId: { in: ids },
+          userId: { in: userIds },
+          isEdited: true,
+        },
+      }),
+      this.conversationStatusRepository.count({
+        where: {
+          conversationId: { in: ids },
+          userId: { in: userIds },
+          isDeleted: true,
+        },
+      }),
+    ]);
+
+    return {
+      conversation: ConversationModelMapper.fromConversationToConversationPublic({
+        ...conversation,
+        sender: {
+          ...conversation.sender,
+          profile: conversation.sender.profile === null ? undefined : conversation.sender.profile,
+        },
+      }),
+      status: {
+        countRead,
+        countEdited,
+        countDeleted,
+      },
+    };
+  }
+}
+/* 
         static async getConversations(userId: string, queryParams: ConversationQueryParams): Promise<PaginatedData<ConversationPublic>> {
         const { sortBy = "createdAt", sortOrder = "desc", page = 1, pageSize = 10, search, ...rest } = queryParams;
         const skip = (page - 1) * pageSize;
@@ -214,4 +376,3 @@ export class ConversationService {
             );
     }
     */
-}

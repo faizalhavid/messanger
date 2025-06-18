@@ -44,19 +44,25 @@ export namespace ThreadModelMapper {
       ...rest,
       creator: creator ? UserModelMapper.fromUserToUserProfileThread(creator) : undefined,
       // TODO : even if lastConversation is undefined, we should still return undefined for lastConversation
-      lastConversation: lastConversation
-        ? ConversationModelMapper.fromConversationToConversationPublic(lastConversation)
-        : undefined,
+      lastConversation: lastConversation ? ConversationModelMapper.fromConversationToConversationPublic(lastConversation) : undefined,
       createdAt: lastConversation?.createdAt ?? new Date(),
       unreadCount,
       participants: participants?.map(UserModelMapper.fromUserToUserProfileThread),
     };
   }
 
-  export function fromThreadToThreadConversationList(conversations?: (Conversation & { sender?: User & { profile?: Profile } & { status?: ConversationStatus } })[], thread?: Thread): ThreadConversationList {
+  export function fromThreadToThreadConversationList(conversations?: (Conversation & { sender?: User & { profile?: Profile } } & { status?: ConversationStatus })[], thread?: Thread): ThreadConversationList {
     return {
       thread: thread ? ThreadModelMapper.fromThreadToThreadPublic(thread) : undefined,
-      conversations: conversations?.map((conversation) => ConversationModelMapper.fromConversationToConversationPublic(conversation)) ?? [],
+      conversations:
+        conversations?.map((conversation) => {
+          const convPublic = ConversationModelMapper.fromConversationToConversationPublic(conversation);
+          // Attach status if present, otherwise undefined
+          return {
+            ...convPublic,
+            status: (conversation as Conversation & { status?: ConversationStatus }).status,
+          };
+        }) ?? [],
     };
   }
 }

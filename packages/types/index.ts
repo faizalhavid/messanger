@@ -6,6 +6,7 @@ export * from './src/user/user';
 export * from './src/user/friend-ship';
 
 export * from './src/conversation/conversation';
+export * from './src/conversation/conversation-status';
 
 export * from './src/thread/thread';
 export * from './src/thread/thread-participant';
