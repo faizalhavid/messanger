@@ -1,6 +1,7 @@
 import { prismaClient } from '@messanger/prisma';
 import { randomUUID } from 'crypto';
 import { WsEventName, WsBroadcastEvent } from '@messanger/types';
+import { generateKeyPairSync } from 'crypto';
 
 interface UserTestProps {
   id: string;
@@ -231,4 +232,45 @@ export class FriendshipTest {
   static async deleteAll() {
     await prismaClient.friendship.deleteMany({});
   }
+}
+
+const subtle = crypto.subtle;
+
+export async function generateAppKeyPair() {
+  const keyPair = await subtle.generateKey(
+    {
+      name: "RSA-OAEP",
+      modulusLength: 2048,
+      publicExponent: new Uint8Array([1, 0, 1]),
+      hash: "SHA-256"
+    },
+    true,
+    ["encrypt", "decrypt"]
+  );
+  return keyPair;
+}
+
+export async function generateMessage(publicKey: CryptoKey, message: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const encodedMessage = encoder.encode(message);
+  const encryptedMessage = await subtle.encrypt(
+    {
+      name: "RSA-OAEP"
+    },
+    publicKey,
+    encodedMessage
+  );
+  return Buffer.from(encryptedMessage).toString('base64');
+}
+
+export async function decryptMessage(privateKey: CryptoKey, encryptedMessage: string): Promise<string> {
+  const decoder = new TextDecoder();
+  const decryptedBuffer = await subtle.decrypt(
+    {
+      name: "RSA-OAEP"
+    },
+    privateKey,
+    Buffer.from(encryptedMessage, 'base64')
+  );
+  return decoder.decode(decryptedBuffer);
 }

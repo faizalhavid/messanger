@@ -1,10 +1,12 @@
 import type { Conversation, ConversationStatus, Profile, User } from '@prisma/client';
 import type { ConversationOverviewStatus, ConversationStatusPublic } from 'packages/types';
+import type { ConversationEncryptionPublic, ConversationEncryptionRequest } from './conversation-encryption';
 
 export type ConversationRequest = {
   content: string;
   senderId: string;
   threadId: string;
+  encryptionMetadata?: ConversationEncryptionRequest;
 };
 
 export interface ConversationUserProfile {
@@ -16,6 +18,7 @@ export interface ConversationUserProfile {
 export interface ConversationPublic extends Omit<Conversation, 'updatedAt' | 'threadId' | 'senderId'> {
   // sender: ConversationUserProfile;
   sender?: ConversationUserProfile;
+  encryptionMetadata?: ConversationEncryptionPublic;
   status?: ConversationStatusPublic;
 }
 
@@ -28,12 +31,13 @@ export namespace ConversationModelMapper {
     };
   }
 
-  export function fromConversationToConversationPublic(conversation: Conversation & { sender?: User & { profile?: Profile } }, status?: ConversationStatusPublic): ConversationPublic {
+  export function fromConversationToConversationPublic(conversation: Conversation & { sender?: User & { profile?: Profile } }, status?: ConversationStatusPublic, encryptionMetadata?: ConversationEncryptionPublic): ConversationPublic {
     const { threadId, senderId, ...rest } = conversation;
     return {
       ...rest,
       sender: conversation.sender ? fromUserToConversationUserProfile(conversation.sender) : undefined,
       status,
+      encryptionMetadata,
     };
   }
 }

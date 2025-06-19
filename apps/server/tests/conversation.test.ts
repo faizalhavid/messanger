@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'bun:test';
-import { ConversationStatusTest, ConversationTest, ProfileTest, ThreadTest, usersTest, UserTest } from './test-utils';
+import { ConversationStatusTest, ConversationTest, decryptMessage, generateAppKeyPair, generateMessage, ProfileTest, ThreadTest, usersTest, UserTest } from './test-utils';
 import { WsEventName } from '@messanger/types';
+import { generateKeyPair } from 'crypto';
 
 describe('GET Conversation', () => {
   beforeEach(async () => {
@@ -219,10 +220,46 @@ describe('POST Conversation', () => {
     //expect(body.data.content).toBe('Hello, this is a test message!');
   });
 
+  it('should encrypt conversation content', async () => {
+    const { publicKey, privateKey } = await generateAppKeyPair();
+    const plaintText = 'Hello, this is a test message!';
+    const encryptedContent = await generateMessage(publicKey, plaintText);
+    const decryptedContent = await decryptMessage(privateKey, encryptedContent);
+
+    const response = await fetch('http://localhost:3000/api/threads/1/conversations', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: usersTest[0].token,
+      },
+      body: JSON.stringify({
+        threadId: '1',
+        content: encryptedContent,
+        senderId: usersTest[0].id,
+        encryptionMetadata: {
+          mac: "mac-placeholder",
+          version: "1.0",
+          iv: "iv-placeholder",
+        },
+      }),
+    });
+    console.log('Post conversation response status:', response);
+    const body = await response.json();
+    console.log('Post conversation response:', body);
+
+    expect(response.status).toBe(200);
+    //expect(body.success).toBe(true);
+    expect(body.data).toBeDefined();
+    expect(body.data.content).toBeDefined();
+    expect(body.data.content).toBe(encryptedContent);
+    expect(plaintText).toBe(decryptedContent);
+    //expect(body.data.content).toBe('Hello, this is a test message!');
+  });
+
   afterEach(async () => {
-    await UserTest.deleteAll();
-    await ProfileTest.deleteAll();
     await ThreadTest.deleteAll();
+    await ProfileTest.deleteAll();
+    await UserTest.deleteAll();
   });
 });
 

@@ -1,5 +1,6 @@
-import type { Conversation, ConversationStatus } from '@prisma/client';
+import type { Conversation, ConversationStatus, EncryptionMetadata } from '@prisma/client';
 import type { ConversationPublic } from './conversation';
+import type { ConversationEncryptionPublic } from './conversation-encryption';
 
 export interface ConversationStatusRequest {
   // conversationId: string;
@@ -8,7 +9,8 @@ export interface ConversationStatusRequest {
   isEdited?: boolean;
 }
 
-export interface ConversationStatusPublic extends Omit<ConversationStatus, 'deletedAt' | 'createdAt' | 'editedAt' | 'readAt'> {}
+export interface ConversationStatusPublic extends Omit<ConversationStatus, 'deletedAt' | 'createdAt' | 'editedAt' | 'readAt'> {
+}
 
 export interface ConversationOverviewStatus {
   conversation: Omit<ConversationPublic, 'status'>;
