@@ -1,5 +1,5 @@
 import type { User, Profile } from '@prisma/client';
-import type { ImageType } from 'packages/types';
+import { ProfileModelMapper, type ImageType, type ProfilePublic } from 'packages/types';
 
 export type UserRequest = {
   username: string;
@@ -14,9 +14,8 @@ export interface UserProfileRequest extends Omit<UserProfileThread, 'avatar' | '
   // bio?: string;
 }
 
+
 export interface UserPublic extends Omit<User, 'password' | 'lastLogin' | 'token'> { }
-
-
 
 export type UserProfileThread = {
   id: string;
@@ -25,7 +24,7 @@ export type UserProfileThread = {
 };
 
 export interface UserProfile extends UserPublic {
-  profile?: UserProfileThread | null;
+  profile?: ProfilePublic | null;
 };
 
 
@@ -43,10 +42,18 @@ export namespace UserModelMapper {
     };
   }
 
-  export function fromUserToUserProfile(user: User & { profile?: Profile }): UserProfile {
+  export function fromUserToUserPublicWithProfile(user: User & { profile?: Profile }): { users: UserPublic, profile: ProfilePublic | undefined } {
     return {
-      ...fromUserToUserPublic(user),
-      profile: fromUserToUserProfileThread(user),
+      users: fromUserToUserPublic(user),
+      profile: user.profile ? ProfileModelMapper.fromProfile(user.profile) : undefined,
     };
   }
+
+  export function fromUserToUserProfile(user: User & { profile: Profile }): UserProfile {
+    return {
+      ...fromUserToUserPublic(user),
+      profile: user.profile ? ProfileModelMapper.fromProfile(user.profile) : undefined,
+    };
+  }
+
 }

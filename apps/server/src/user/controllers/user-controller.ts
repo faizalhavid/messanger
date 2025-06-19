@@ -8,9 +8,9 @@ export const userController = new Hono<{ Variables: HonoContext }>();
 const controller = userController;
 
 
-controller.get("/", (c) => {
+controller.get("/", async (c) => {
     const user = c.get("authenticatedUser");
-    const result = UserService.getUserProfile(user.id);
+    const result = await UserService.getUserProfile(user.id);
     return c.json({
         success: true,
         message: "User profile retrieved successfully",
@@ -18,20 +18,19 @@ controller.get("/", (c) => {
     });
 });
 
-controller.get("/:id", (c) => {
+controller.get("/:id", async (c) => {
     const userId = c.req.param("id");
-    const result = UserService.getUserProfile(userId);
     return c.json({
         success: true,
         message: `User with ID ${userId} found`,
-        data: result
+        data: await UserService.getUserProfile(userId)
     });
 });
 
-controller.patch("/", async (c) => {
-    const user = c.get("authenticatedUser");
+controller.patch("/:id", async (c) => {
+    const userId = c.req.param("id");
     const request = await c.req.json();
-    const result = await UserService.updateUserProfile(user.id, request);
+    const result = await UserService.updateUserProfile(userId, request);
     return c.json({
         success: true,
         message: "User profile updated successfully",
@@ -58,25 +57,25 @@ controller.patch("/", async (c) => {
 //     });
 // });
 
-controller.patch("/activate", async (c) => {
-    const user = c.get("authenticatedUser");
+controller.patch("/:id/activate", async (c) => {
+    const userId = c.req.param("id");
     const request = await c.req.json();
-    await UserService.updateActivateUser(user.id, request.status);
+
     return c.json({
         success: true,
         message: "User activation status updated successfully",
-        data: null
+        data: await UserService.updateActivateStatus(userId, request.status)
     });
 });
 
-controller.patch("/delete", async (c) => {
-    const user = c.get("authenticatedUser");
+controller.patch("/:id/delete", async (c) => {
+    const userId = c.req.param("id");
     const request = await c.req.json();
-    await UserService.updateDeleteUserStatus(user.id, request.status);
+
     return c.json({
         success: true,
         message: "User deletion status updated successfully",
-        data: null
+        data: await UserService.updateDeleteUserStatus(userId, request.status)
     });
 });
 

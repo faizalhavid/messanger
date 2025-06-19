@@ -75,6 +75,7 @@ describe('GET Conversation', () => {
     expect(body.data).toBeDefined();
     //expect(Array.isArray(body.data)).toBe(true);
   });
+
   it('should show detail conversations', async () => {
     const response = await fetch('http://localhost:3000/api/threads/1/conversations/1', {
       method: 'GET',

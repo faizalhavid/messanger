@@ -39,9 +39,9 @@ export const BiodataSchema = z.object({
 
 
 export const UserProfileSchema = z.object({
-    username: z.string().min(3).max(20),
+    username: z.string().min(3).max(20).optional(),
     // email: z.string().email().max(100).optional(),
-    avatar: imageTypeSchema.nullable(),
+    avatar: imageTypeSchema.nullable().optional(),
     firstName: z.string().min(1).max(50).optional(),
     lastName: z.string().min(1).max(50).optional(),
     // bio: BiodataSchema.optional(),

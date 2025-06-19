@@ -12,7 +12,7 @@ export interface ProfilePublic extends Omit<Profile, 'updatedAt' | 'bioId'> {
     bio?: Omit<BiodataPublic, 'createdAt' | 'updatedAt'>;
 }
 
-export namespace ProfilePublic {
+export namespace ProfileModelMapper {
     export function fromProfile(profile: Profile & { bio?: Biodata }): ProfilePublic {
         const {
             bioId,
