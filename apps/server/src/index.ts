@@ -3,15 +3,14 @@ import { cors } from 'hono/cors';
 import { HonoContext } from '@messanger/types';
 import { userController } from './user/controllers/user-controller'
 import { authController } from './auth/controllers/auth-controller';
-import { profileController } from './user/controllers/profile-controller';
 import { errorHandler } from './handlers/error-handler';
 import { authMiddleware } from './middleware';
 import { websocket, webSocketConfig } from './websocket/config';
 import { conversationController } from './conversation/controllers/conversation-controller';
-import { conversationGroupController } from './conversation/controllers/conversation-group-controller';
-import { conversationGroupMessagesController } from './conversation/controllers/conversation-group-message-controller';
 import { ConversationTest, ProfileTest, usersTest, UserTest } from 'tests/test-utils';
-import { conversationThreadController } from './conversation/controllers/conversation-thread-controller';
+import { threadController } from './thread/controllers/thread-controller';
+import { threadParticipantsController } from './thread/controllers/thread-participants-controller';
+import { friendshipController } from './user/controllers/friendship-controller';
 
 
 const app = new Hono<{ Variables: HonoContext }>();
@@ -101,11 +100,10 @@ api.get('/seed', async (c) => {
 api.get('', (c) => c.text('Hello Hono!'))
 api.route('/users', userController);
 api.route('/auth', authController);
-api.route('/profile', profileController);
-api.route('/conversation-threads', conversationThreadController);
-api.route('/conversations', conversationController);
-api.route('/conversation-groups', conversationGroupController);
-api.route('/conversation-groups-messages', conversationGroupMessagesController);
+api.route('/threads', threadController);
+api.route('/threads/:threadId/conversations', conversationController);
+api.route('/threads/:threadId/participants', threadParticipantsController);
+api.route('/friends', friendshipController);
 
 app.route('/api', api);
 

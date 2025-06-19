@@ -2,7 +2,7 @@ import { prismaClient } from "@messanger/prisma";
 import { LoginRequest, LoginResponse, RegisterRequest, RegisterResponse } from "@messanger/types";
 import { loginSchema, registerSchema } from "@messanger/types";
 import { HTTPException } from "hono/http-exception";
-import { UserPublic } from "@messanger/types";
+import { UserModelMapper } from "@messanger/types";
 import { Context } from "hono";
 
 
@@ -40,7 +40,7 @@ export class AuthService {
 
         const response: LoginResponse = {
             token,
-            user: UserPublic.fromUser(user)
+            user: UserModelMapper.fromUserToUserPublic(user)
         };
 
         return response;
@@ -84,7 +84,7 @@ export class AuthService {
                 address: "",
             }
         });
-        return RegisterResponse.fromUserAndProfile(UserPublic.fromUser(user), { ...profile, bio: biodata });
+        return RegisterResponse.fromUserAndProfile(UserModelMapper.fromUserToUserPublic(user), { ...profile, bio: biodata });
     }
 
 

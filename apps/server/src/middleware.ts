@@ -13,7 +13,7 @@ export const authMiddleware = async (c: Context, next: () => Promise<void>) => {
         throw new HTTPException(401, { message: 'Unauthorized: Token is required for this route' });
     }
     if (!isPublicRoute && token) {
-        const authenticatedUser = await UserService.getUser(token);
+        const authenticatedUser = await UserService.getUserByToken(token);
         c.set('authenticatedUser', authenticatedUser);
         console.log('Authenticated user:', authenticatedUser);
     }
