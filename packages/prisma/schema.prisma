@@ -160,10 +160,23 @@ model Conversation {
   thread Thread @relation(fields: [threadId], references: [id], onDelete: Cascade)
   sender User   @relation("SentConversations", fields: [senderId], references: [id], onDelete: Cascade)
 
-  conversationStatus ConversationStatus[]
+  conversationStatus   ConversationStatus[]
+  encryptionMetadata   EncryptionMetadata?  @relation(fields: [encryptionMetadataId], references: [id])
+  encryptionMetadataId String?
 
   @@index([threadId])
   @@index([senderId])
+}
+
+model EncryptionMetadata {
+  id           String         @id @default(cuid())
+  iv           String?        @db.VarChar(255) // Initialization Vector (base64)
+  version      String?        @default("v1")
+  mac          String? // Message Authentication Code (optional)
+  createdAt    DateTime       @default(now())
+  Conversation Conversation[]
+
+  @@map("encryption_metadata")
 }
 
 model ConversationStatus {

@@ -63,10 +63,23 @@ export const friendshipSchema = z.object({
     }
 );
 
+export const conversationEncryptionSchema = z.object({
+    mac: z.string().min(1, "MAC is required"),
+    version: z.string().min(1, "Version is required"),
+    iv: z.string().min(1, "IV is required"),
+}).refine(
+    (data) => !!data.mac && !!data.version && !!data.iv,
+    {
+        message: "MAC, version, and IV are required.",
+        path: ['mac', 'version', 'iv'],
+    }
+);
+
 export const conversationThreadSchema = z.object({
     threadId: z.string().min(1, "Thread ID is required"),
     content: z.string().min(1, "Content is required").max(5000),
-    senderId: z.string().min(1, "Sender ID is required")
+    senderId: z.string().min(1, "Sender ID is required"),
+    encryptionMetadata: conversationEncryptionSchema.optional(),
 })
 
 export const threadSchema = z.object({

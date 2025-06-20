@@ -6,33 +6,37 @@ import { ConversationStatusService } from './conversation-status-service';
 export class ConversationService {
   private static conversationRepository = prismaClient.conversation;
   private static conversationStatusRepository = prismaClient.conversationStatus;
-  private static threadRepository = prismaClient.thread;
+  private static conversationEncryptionRepository = prismaClient.encryptionMetadata;
   private static threadParticipantRepository = prismaClient.threadParticipant;
 
   // static async createConversationInThread(req: ConversationRequest, userId: string): Promise<{ thread: ThreadPublic, conversation: ConversationPublic }> {
   static async createConversationInThread(req: ConversationRequest, threadId: string, userId: string): Promise<ConversationPublic> {
-    const validatedConversation = conversationThreadSchema.parse({
-      threadId: threadId,
+    const validated = conversationThreadSchema.parse({
+      threadId,
       content: req.content,
       senderId: req.senderId || userId,
+      encryptionMetadata: req.encryptionMetadata,
     });
+
+    const encryptionMetadata = await this.conversationEncryptionRepository.create({
+      data: validated.encryptionMetadata || { mac: '', version: '', iv: '' },
+    });
+
     const conversation = await this.conversationRepository.create({
       data: {
-        threadId: validatedConversation.threadId,
-        senderId: validatedConversation.senderId,
-        content: validatedConversation.content,
+        threadId: validated.threadId,
+        senderId: validated.senderId,
+        content: validated.content,
+        encryptionMetadataId: encryptionMetadata.id,
       },
       include: {
-        // thread: {
-        //   include: {
-        //     creator: {
-        //       include: { profile: true },
-        //     },
-        //   },
-        // },
         sender: { include: { profile: true } },
       },
     });
+
+    if (!conversation) throw new Error('Conversation not created');
+
+
 
     ConversationStatusService.createConversationStatusForEachParticipants(conversation.id, threadId, userId);
 
@@ -52,7 +56,8 @@ export class ConversationService {
         ...conversation.sender,
         profile: conversation.sender.profile === null ? undefined : conversation.sender.profile,
       },
-    });
+
+    }, undefined, encryptionMetadata ?? undefined);
   }
 
   static async updateConversationInThread(req: ConversationRequest, threadId: string, conversationId: string, userId: string): Promise<ConversationPublic> {
@@ -103,6 +108,8 @@ export class ConversationService {
       include: {
         thread: { include: { creator: { include: { profile: true } } } },
         sender: { include: { profile: true } },
+        conversationStatus: true,
+        encryptionMetadata: true,
       },
     });
 
@@ -130,7 +137,7 @@ export class ConversationService {
           ...updated.sender,
           profile: updated.sender.profile === null ? undefined : updated.sender.profile,
         },
-      });
+      }, conversation.conversationStatus, conversation.encryptionMetadata ?? undefined);
     }
 
     ConversationStatusService.updateConversationStatusByUserId(
