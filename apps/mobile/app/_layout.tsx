@@ -12,7 +12,7 @@ import { ActivityIndicator, Text, useColorScheme, View } from 'react-native';
 import { PaperProvider } from 'react-native-paper';
 import { rnNavigationTheme, rnPaperTheme } from '@/components/themes';
 import { QueryClientProvider } from '@tanstack/react-query';
-import { queryClient } from '@/services/queryClient';
+import { queryClient } from '@/services/queries';
 import { WebSocketProvider } from '@/providers/WebSocketConnection';
 
 export {
@@ -66,17 +66,20 @@ function RootLayoutNav() {
   const PUBLIC_ROUTES = ['/conversations', '/login', '/register', '/forgot-password'];
 
   if (isLoading) {
-    return <View style={{
-      backgroundColor: 'rgba(255,255,255,0.6)',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 10,
-    }}>
-      <ActivityIndicator size="large" color="#075E54" />
-    </View>
+    return (
+      <View
+        style={{
+          backgroundColor: 'rgba(255,255,255,0.6)',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 10,
+        }}
+      >
+        <ActivityIndicator size="large" color="#075E54" />
+      </View>
+    );
   }
   React.useEffect(() => {
-
     if (!isLoading && (!token || token === '' || token == null) && !PUBLIC_ROUTES.includes(pathName)) {
       route.replace('/(auth)/login');
     }
@@ -85,8 +88,6 @@ function RootLayoutNav() {
       route.replace('/conversations');
     }
   }, [isLoading, token, pathName, route]);
-
-
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>

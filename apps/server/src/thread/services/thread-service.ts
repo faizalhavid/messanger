@@ -1,6 +1,6 @@
 import { prismaClient } from '@messanger/prisma';
 import { fileTypeSchema, ImageType, imageTypeSchema, ThreadList, ThreadModelMapper, ThreadRequest, threadSchema, WsEventName, WsTopic } from '@messanger/types';
-import { PaginatedData, PaginationMeta, ThreadConversationList, ConversationQueryParams } from '@messanger/types';
+import { PaginatedData, PaginationMeta, ThreadConversationList, QueryParamsData } from '@messanger/types';
 import { server } from 'src';
 import { ConversationStatusService } from 'src/conversation/services/conversation-status-service';
 import { generateWSBroadcastPayload } from 'src/websocket/config';
@@ -11,7 +11,7 @@ export class ThreadService {
   private static conversationRepository = prismaClient.conversation;
   private static conversationStatusRepository = prismaClient.conversationStatus;
 
-  static async getThreads(userId: string, queryParams: ConversationQueryParams): Promise<PaginatedData<ThreadList>> {
+  static async getThreads(userId: string, queryParams: QueryParamsData): Promise<PaginatedData<ThreadList>> {
     const { sortBy = 'createdAt', sortOrder = 'desc', page = 1, pageSize = 10, search, ...rest } = queryParams;
     const skip = (page - 1) * pageSize;
     const take = pageSize;
@@ -112,7 +112,7 @@ export class ThreadService {
     };
   }
 
-  static async getThreadConversations(threadId: string, userId: string, queryParams: ConversationQueryParams): Promise<PaginatedData<ThreadConversationList | null>> {
+  static async getThreadConversations(threadId: string, userId: string, queryParams: QueryParamsData): Promise<PaginatedData<ThreadConversationList | null>> {
     const { sortBy = 'createdAt', sortOrder = 'desc', page = 1, pageSize = 10, search, ...rest } = queryParams;
     const skip = (page - 1) * pageSize;
     const take = parseInt(String(pageSize), 10);
@@ -306,12 +306,30 @@ export class ThreadService {
     const validatedData = threadSchema.parse(req);
     const { name, participantIds } = validatedData;
 
+    if (participantIds && participantIds.length === 0) {
+      throw new Error('Participant IDs cannot be an empty array.');
+    }
+    const existingThread = await this.threadRepository.findUnique({
+      where: { id: threadId },
+      select: { type: true },
+    });
+
+    if (!existingThread) {
+      throw new Error('Thread not found.');
+    }
+
+    const uniqueParticipantIds = Array.from(new Set([...(participantIds || []), userId]));
+
+    if (existingThread.type === 'PRIVATE' && uniqueParticipantIds.length > 2) {
+      throw new Error('A private thread cannot have more than 2 participants.');
+    }
+
     const thread = await this.threadRepository.update({
       where: { id: threadId, creatorId: userId },
       data: {
         name,
         participants: {
-          set: Array.from(new Set([...(participantIds || []), userId])).map((id) => ({
+          set: uniqueParticipantIds.map((id) => ({
             threadId_userId: {
               threadId: threadId,
               userId: id,
@@ -367,28 +385,34 @@ export class ThreadService {
     });
   }
 
-  static async deleteThread(threadId: string, userId: string): Promise<ThreadList | null> {
-    const thread = await this.threadRepository.update({
-      where: { id: threadId, creatorId: userId },
-      data: {
-        isDeleted: true,
-        participants: {
-          updateMany: {
-            where: { userId },
-            data: { isDeleted: true },
-          },
-        },
+  static async deleteByUserThread(threadId: string, userId: string): Promise<ThreadList | null> {
+    const thread = await this.threadRepository.findFirst({
+      where: {
+        id: threadId,
+        isDeleted: false,
+        OR: [{ creatorId: userId }, { participants: { some: { userId, isDeleted: false } } }],
       },
       include: {
-        creator: {
-          include: { profile: true },
-        },
-        participants: {
-          where: { isDeleted: false },
-          include: { user: true },
-        },
+        creator: { include: { profile: true } },
+        participants: { where: { isDeleted: false }, include: { user: true } },
       },
     });
+
+    if (!thread) {
+      throw new Error('Thread not found or you do not have access to it.');
+    }
+
+    if (thread.creatorId === userId) {
+      await this.threadRepository.update({
+        where: { id: threadId },
+        data: { isDeleted: true },
+      });
+    } else {
+      await this.threadParticipantRepository.updateMany({
+        where: { threadId, userId, isDeleted: false },
+        data: { isDeleted: true },
+      });
+    }
 
     return ThreadModelMapper.fromThreadToThreadList({
       ...thread,

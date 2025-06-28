@@ -79,7 +79,7 @@ controller.patch('/:id', async (c) => {
 controller.delete('/:id', async (c) => {
   const user = c.get('authenticatedUser');
   const threadId = c.req.param('id');
-  await ThreadService.deleteThread(threadId, user.id);
+  await ThreadService.deleteByUserThread(threadId, user.id);
   return c.json({
     success: true,
     message: 'Thread deleted successfully',

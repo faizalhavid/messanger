@@ -8,6 +8,14 @@ import { generateWSBroadcastPayload } from 'src/websocket/config';
 
 export const conversationController = new Hono<{ Variables: HonoContext }>();
 
+conversationController.get('', async (c) => {
+  const threadId = c.req.param('threadId');
+  if (!threadId) {
+    return c.json({ success: false, message: 'Missing thread id', data: null }, 400);
+  }
+  return c.redirect(`/api/threads/${threadId}`);
+});
+
 conversationController.post('/', async (c) => {
   const user = c.get('authenticatedUser');
 

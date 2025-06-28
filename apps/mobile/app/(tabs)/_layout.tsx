@@ -7,10 +7,7 @@ import { useClientOnlyValue } from '@/components/useClientOnlyValue';
 import { Icon } from 'react-native-paper';
 
 // You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
-function TabBarIcon(props: {
-  name: React.ComponentProps<typeof FontAwesome>['name'];
-  color: string;
-}) {
+function TabBarIcon(props: { name: React.ComponentProps<typeof FontAwesome>['name']; color: string }) {
   return <FontAwesome size={28} style={{ marginBottom: -3 }} {...props} />;
 }
 
@@ -19,15 +16,16 @@ export default function TabLayout() {
 
   return (
     <Tabs
-      initialRouteName='conversations'
+      initialRouteName="conversations"
       screenOptions={{
         // tabBarActiveTintColor: appTheme[colorScheme ?? 'light'].tint,
         // Disable the static render of the header on web
         // to prevent a hydration error in React Navigation v6.
         headerShown: useClientOnlyValue(false, true),
-      }}>
+      }}
+    >
       <Tabs.Screen
-        name="conversations"
+        name="threads"
         options={{
           tabBarIcon: ({ color }) => <FontAwesome name="envelope" color={color} size={28} />,
           headerShown: false,
