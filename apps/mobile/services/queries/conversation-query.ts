@@ -2,19 +2,40 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { getConversationById, getConversations, postConversation, putConversation } from '@/services/apis/conversation';
 import { ConversationPublic, ConversationRequest, QueryParamsData } from '@messanger/types';
 import { queryClient } from '.';
+import { decryptionData } from '@messanger/utils';
+import { getDataFromLocalStorage } from '@/utils/local-storage';
 
 export const conversationKeys = {
   all: ['conversation'] as const,
   detail: (id: string, threadId?: string) => ['conversation', id, threadId] as const,
 };
 
-export function useConversationsQuery(threadId: string, queryParams?: QueryParamsData) {
+export function useConversationsQuery(threadId: string, privateKey: string, queryParams?: QueryParamsData) {
   return useQuery({
     queryKey: conversationKeys.all,
-    queryFn: () => getConversations(threadId, queryParams),
+    queryFn: async () => {
+      const data = await getConversations(threadId, queryParams);
+      if (privateKey && data?.data?.items) {
+        const decryptedItems = await Promise.all(
+          data.data.items.map(async (item: any) => {
+            if (item.content) {
+              try {
+                const decryptedContent = await decryptionData(privateKey, item.content);
+                return { ...item, content: decryptedContent };
+              } catch {
+                return item;
+              }
+            }
+            return item;
+          })
+        );
+        return { ...data, data: { ...data.data, items: decryptedItems } };
+      }
+      return data;
+    },
     select: (data) => (Array.isArray(data) ? data : data?.data?.items ?? []),
     placeholderData: () => queryClient.getQueryData(conversationKeys.all),
-    enabled: !!threadId,
+    enabled: !!threadId && !!privateKey,
   });
 }
 

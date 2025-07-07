@@ -7,15 +7,13 @@ export type UserRequest = {
   password: string;
 };
 
-
 export interface UserProfileRequest extends Omit<UserProfileThread, 'avatar' | 'id'> {
-  avatar: ImageType,
+  avatar: ImageType;
   username: string;
   // bio?: string;
 }
 
-
-export interface UserPublic extends Omit<User, 'password' | 'lastLogin' | 'token'> { }
+export interface UserPublic extends Omit<User, 'password' | 'lastLogin' | 'token'> {}
 
 export type UserProfileThread = {
   id: string;
@@ -25,14 +23,11 @@ export type UserProfileThread = {
 
 export interface UserProfile extends UserPublic {
   profile?: ProfilePublic | null;
-};
-
-
+}
 
 export namespace UserModelMapper {
   export function fromUserToUserPublic(user: User): UserPublic {
-    const { id, username, email, createdAt, updatedAt, deletedAt, isDeleted, isActive } = user;
-    return { id, username, email, createdAt, updatedAt, deletedAt, isDeleted, isActive };
+    return user;
   }
   export function fromUserToUserProfileThread(user: User & { profile?: Profile }): UserProfileThread {
     return {
@@ -42,7 +37,7 @@ export namespace UserModelMapper {
     };
   }
 
-  export function fromUserToUserPublicWithProfile(user: User & { profile?: Profile }): { users: UserPublic, profile: ProfilePublic | undefined } {
+  export function fromUserToUserPublicWithProfile(user: User & { profile?: Profile }): { users: UserPublic; profile: ProfilePublic | undefined } {
     return {
       users: fromUserToUserPublic(user),
       profile: user.profile ? ProfileModelMapper.fromProfile(user.profile) : undefined,
@@ -55,5 +50,4 @@ export namespace UserModelMapper {
       profile: user.profile ? ProfileModelMapper.fromProfile(user.profile) : undefined,
     };
   }
-
 }

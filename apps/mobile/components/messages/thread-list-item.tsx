@@ -3,6 +3,7 @@ import React from 'react';
 import { Avatar, Badge, List, Text } from 'react-native-paper';
 import { Pressable, StyleSheet, View } from 'react-native';
 import StackWrapper from '../StackWrapper';
+import ParticipantsAvatar from '../ParticipantsAvatar';
 
 type SenderProps = {
   threadId: string;
@@ -35,9 +36,6 @@ export default function ThreadListItem({ type, lastConversation, unreadCount = 2
             <Text variant="titleMedium" numberOfLines={1} ellipsizeMode="tail" style={{ maxWidth: '80%' }}>
               {props.title}
             </Text>
-            {type === 'GROUP' && (
-              
-            )}
           </StackWrapper>
           <Text variant="bodySmall">{time}</Text>
         </StackWrapper>
@@ -66,6 +64,12 @@ export default function ThreadListItem({ type, lastConversation, unreadCount = 2
           <Avatar.Image size={48} source={{ uri: avatar || 'https://via.placeholder.com/150' }} />
         </Pressable>
       )}
+      right={() => {
+        if (type === 'GROUP' && participants) {
+          return <ParticipantsAvatar participants={participants} />;
+        }
+        return null;
+      }}
     />
   );
 }

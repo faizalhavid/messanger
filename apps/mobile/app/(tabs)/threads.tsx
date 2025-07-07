@@ -3,7 +3,7 @@ import React, { useEffect } from 'react';
 import { Appbar, Divider, Text } from 'react-native-paper';
 import AppSafeArea from '@/components/AppSafeArea';
 import ConversationBubleChat from '@/components/messages/conversation-buble-chat';
-import ThreadListItem from '@/components/chat/thread-list-item';
+
 import { useRouter } from 'expo-router';
 import { QueryParamsData, ThreadList, ThreadPublic } from '@messanger/types';
 import { getConversations } from '@/services/apis/conversation';
@@ -12,6 +12,7 @@ import { useAuthStore } from '@/store/auth';
 import SpeedDial from '@/components/SpeedDial';
 import { getThreads } from '@/services/apis/thread';
 import { useMutationThreadQuery, useThreadQuery } from '@/services/queries/thread-query';
+import ThreadListItem from '@/components/messages/thread-list-item';
 
 export default function ThreadsPage() {
   const router = useRouter();

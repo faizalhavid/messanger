@@ -3,7 +3,7 @@ export * from './src/auth/register';
 export * from './src/user/bio';
 export * from './src/user/profile';
 export * from './src/user/user';
-export * from './src/user/friend-ship';
+export * from './src/user/friendship';
 
 export * from './src/conversation/conversation';
 export * from './src/conversation/conversation-status';

@@ -1,3 +1,5 @@
+import React from 'react';
+import { encryptionData } from '@messanger/utils';
 import AppSafeArea from '@/components/AppSafeArea';
 import ConversationBubleChat from '@/components/messages/conversation-buble-chat';
 import Spacer from '@/components/Spacer';
@@ -6,38 +8,32 @@ import { appColors } from '@/components/themes/colors';
 import { useConversationsQuery, useMutationConversationQuery } from '@/services/queries/conversation-query';
 import { useAuthStore } from '@/store/auth';
 import { MaterialIcons } from '@expo/vector-icons';
-import { ConversationPublic, ConversationRequest, WsEventName } from '@messanger/types';
+import { ConversationPublic, ConversationRequest, conversationThreadSchema, WsEventName } from '@messanger/types';
 import { Stack, useLocalSearchParams } from 'expo-router';
-import React from 'react';
 import { Button, FlatList, Keyboard, KeyboardAvoidingView, Platform, RefreshControl, TextInput, TouchableWithoutFeedback, View } from 'react-native';
 import { Avatar, Divider, IconButton, Menu, Text, TextInput as TextInputPaper } from 'react-native-paper';
+import { getDataFromLocalStorage } from '@/utils/local-storage';
 
-export default function ConversationDetail() {
+export default async function ConversationDetail() {
   const params = useLocalSearchParams();
   const threadId = params.id as string | undefined;
-  const { data, isLoading, refetch, isRefetching } = useConversationsQuery(threadId!);
-  const { mutate: sendMessage, isPending, error } = useMutationConversationQuery(threadId!);
+  const privKey = getDataFromLocalStorage('privateKey');
   const { user } = useAuthStore();
+  const { data, isLoading, refetch, isRefetching } = useConversationsQuery(threadId!, await privKey);
+  const { mutate: sendMessage, isPending, error } = useMutationConversationQuery(threadId!);
   const pageState = React.useState({
     generalError: '',
     openUpMenuHeader: false,
-    message: {
-      content: '',
-      isRead: false,
-      createdAt: new Date().toISOString(),
-      sender: {
-        id: '',
-        firstName: '',
-        lastName: '',
-        avatar: '',
-      },
-    } as unknown as ConversationPublic,
+    message: {} as unknown as ConversationRequest,
   });
+
   const handlePostMessage = async () => {
     const payload: ConversationRequest = {
+      senderId: user?.id ?? '',
       content: pageState[0].message.content,
+      threadId: threadId ?? '',
     };
-    const validated = conversationSchema.safeParse(payload);
+    const validated = conversationThreadSchema.safeParse(payload);
 
     if (!validated.success) {
       const errors = validated.error.flatten().fieldErrors;
@@ -47,6 +43,8 @@ export default function ConversationDetail() {
       });
       return;
     }
+    const encryptedMessage = await encryptionData(user?.pubKey ?? '', validated.data.content);
+    validated.data.content = encryptedMessage;
     sendMessage(validated.data as ConversationRequest, {
       onSuccess: (data) => {
         console.log('Message sent successfully', data);
