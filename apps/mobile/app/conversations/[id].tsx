@@ -1,11 +1,11 @@
 import React from 'react';
-import { encryptionData } from '@messanger/utils';
+import { encryptionData } from '@utils/crypto';
 import AppSafeArea from '@/components/AppSafeArea';
 import ConversationBubleChat from '@/components/messages/conversation-buble-chat';
 import Spacer from '@/components/Spacer';
 import StackWrapper from '@/components/StackWrapper';
 import { appColors } from '@/components/themes/colors';
-import { useConversationsQuery, useMutationConversationQuery } from '@/services/queries/conversation-query';
+import { useConversationsQuery, useMutationConversationQuery } from '@/services/queries/conversations-query';
 import { useAuthStore } from '@/store/auth';
 import { MaterialIcons } from '@expo/vector-icons';
 import { ConversationPublic, ConversationRequest, conversationThreadSchema, WsEventName } from '@messanger/types';
@@ -14,12 +14,17 @@ import { Button, FlatList, Keyboard, KeyboardAvoidingView, Platform, RefreshCont
 import { Avatar, Divider, IconButton, Menu, Text, TextInput as TextInputPaper } from 'react-native-paper';
 import { getDataFromLocalStorage } from '@/utils/local-storage';
 
-export default async function ConversationDetail() {
+export default function ConversationDetail() {
   const params = useLocalSearchParams();
   const threadId = params.id as string | undefined;
-  const privKey = getDataFromLocalStorage('privateKey');
+  const [privKey, setPrivKey] = React.useState<string | null>(null);
+
   const { user } = useAuthStore();
-  const { data, isLoading, refetch, isRefetching } = useConversationsQuery(threadId!, await privKey);
+  React.useEffect(() => {
+    getDataFromLocalStorage('privateKey').then(setPrivKey);
+  }, []);
+
+  const { data, isLoading, refetch, isRefetching } = useConversationsQuery(threadId!, privKey ?? '');
   const { mutate: sendMessage, isPending, error } = useMutationConversationQuery(threadId!);
   const pageState = React.useState({
     generalError: '',

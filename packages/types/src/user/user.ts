@@ -1,5 +1,6 @@
 import type { User, Profile } from '@prisma/client';
-import { ProfileModelMapper, type ImageType, type ProfilePublic } from 'packages/types';
+import { ProfileModelMapper, type ProfilePublic } from './profile';
+import type { ImageType } from '../file';
 
 export type UserRequest = {
   username: string;

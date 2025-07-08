@@ -1,5 +1,5 @@
 import type { Conversation, ConversationStatus, Profile, User } from '@prisma/client';
-import type { ConversationOverviewStatus, ConversationStatusPublic } from 'packages/types';
+import type { ConversationOverviewStatus, ConversationStatusPublic } from '@messanger/types';
 import type { ConversationEncryptionPublic, ConversationEncryptionRequest } from './conversation-encryption';
 
 export type ConversationRequest = {

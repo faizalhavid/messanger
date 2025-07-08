@@ -1,4 +1,4 @@
-import { logger } from '@messanger/logging';
+import { logger } from '@messanger/utils/src/loggers';
 import { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { ZodError } from 'zod';

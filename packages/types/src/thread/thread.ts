@@ -1,5 +1,5 @@
 import type { Conversation, Thread, User, Profile, ConversationStatus } from '@prisma/client';
-import { ConversationModelMapper, UserModelMapper, type ConversationPublic, type UserProfileThread } from 'packages/types';
+import { ConversationModelMapper, UserModelMapper, type ConversationPublic, type UserProfileThread } from '@messanger/types';
 
 export interface ThreadRequest {
   name?: string;

@@ -16,7 +16,7 @@ export default function TabLayout() {
 
   return (
     <Tabs
-      initialRouteName="conversations"
+      initialRouteName="threads"
       screenOptions={{
         // tabBarActiveTintColor: appTheme[colorScheme ?? 'light'].tint,
         // Disable the static render of the header on web

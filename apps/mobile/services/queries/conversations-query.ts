@@ -2,7 +2,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { getConversationById, getConversations, postConversation, putConversation } from '@/services/apis/conversation';
 import { ConversationPublic, ConversationRequest, QueryParamsData } from '@messanger/types';
 import { queryClient } from '.';
-import { decryptionData } from '@messanger/utils';
+import { decryptionData } from '@utils/crypto';
 import { getDataFromLocalStorage } from '@/utils/local-storage';
 
 export const conversationKeys = {

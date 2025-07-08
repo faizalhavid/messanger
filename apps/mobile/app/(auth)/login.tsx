@@ -7,6 +7,7 @@ import { loginSchema } from '@messanger/types';
 import { postLogin } from '@/services/apis/auth';
 import StackWrapper from '@/components/StackWrapper';
 import { useAuthStore } from '@/store/auth';
+import { saveDataToLocalStorage } from '@/utils/local-storage';
 
 export default function Login() {
   const router = useRouter();
@@ -63,6 +64,8 @@ export default function Login() {
         // @ts-ignore
         setToken(response.data?.data.token ?? '');
         // @ts-ignore
+        saveDataToLocalStorage('privateKey', response.data?.data?.privateKey ?? '');
+        // @ts-ignore
         setUser(response.data?.data.user ?? null);
         isAuthenticated();
         pageState[1]({
@@ -70,7 +73,7 @@ export default function Login() {
           isLoading: false,
           generalError: '',
         });
-        router.push('/(tabs)/conversations');
+        router.push('/(tabs)/threads');
       } else {
         pageState[1]({
           ...pageState[0],
@@ -208,7 +211,7 @@ export default function Login() {
       <Button
         mode="outlined"
         onPress={() => {
-          router.push('/(tabs)/conversations');
+          router.push('/(tabs)/threads');
         }}
         style={{ marginTop: 16 }}
       >

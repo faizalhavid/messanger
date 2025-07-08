@@ -11,7 +11,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthStore } from '@/store/auth';
 import SpeedDial from '@/components/SpeedDial';
 import { getThreads } from '@/services/apis/thread';
-import { useMutationThreadQuery, useThreadQuery } from '@/services/queries/thread-query';
+import { useMutationThreadQuery, useThreadQuery } from '@/services/queries/threads-query';
 import ThreadListItem from '@/components/messages/thread-list-item';
 
 export default function ThreadsPage() {
@@ -60,7 +60,7 @@ export default function ThreadsPage() {
           return (
             <ThreadListItem
               threadId={item.id}
-              title={titleThread}
+              title={titleThread ?? ''}
               creator={item?.creator}
               participants={item.participants}
               onPress={() => {
@@ -90,7 +90,7 @@ export default function ThreadsPage() {
         icon="plus"
         onPress={() => {
           console.log('New conversation pressed');
-          router.push('/conversations/new');
+          // router.push('/conversations/new');
         }}
       />
     </AppSafeArea>

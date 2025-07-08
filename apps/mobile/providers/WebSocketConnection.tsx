@@ -1,5 +1,5 @@
 import { queryClient } from '@/services/queries';
-import { conversationKeys } from '@/services/queries/conversation-query';
+import { conversationKeys } from '@/services/queries/conversations-query';
 import { useMessageStore } from '@/store/message';
 import { ConversationPublic, WsEventName, WsTopic } from '@messanger/types';
 import React, { createContext, useContext, useEffect, useRef } from 'react';

@@ -15,6 +15,9 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '@/services/queries';
 import { WebSocketProvider } from '@/providers/WebSocketConnection';
 
+import 'react-native-quick-crypto';
+
+
 export {
   // Catch any errors thrown by the Layout component.
   ErrorBoundary,
@@ -63,7 +66,7 @@ function RootLayoutNav() {
   const colorScheme = useColorScheme();
   const { user, token, isLoading, setToken, setUser, setLoading } = useAuthStore();
   const paperTheme = rnPaperTheme[colorScheme ?? 'light'];
-  const PUBLIC_ROUTES = ['/conversations', '/login', '/register', '/forgot-password'];
+  const PUBLIC_ROUTES = ['/threads', '/login', '/register', '/forgot-password'];
 
   if (isLoading) {
     return (
@@ -84,8 +87,8 @@ function RootLayoutNav() {
       route.replace('/(auth)/login');
     }
 
-    if (!isLoading && token && pathName === '/login') {
-      route.replace('/conversations');
+    if (!isLoading && token && pathName === '/(auth)/login') {
+      route.replace('/(tabs)/threads');
     }
   }, [isLoading, token, pathName, route]);
 

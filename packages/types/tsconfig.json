@@ -4,4 +4,7 @@
     "outDir": "dist",
   },
   "include": ["src", "index.ts"],
+    "paths": {
+    "@messanger/types/*": ["packages/types/src/*"]
+  }
 }

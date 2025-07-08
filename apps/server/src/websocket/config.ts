@@ -4,7 +4,7 @@ import { Context } from 'hono';
 import { UserService } from 'src/user/services/user-service';
 import { WsTopic, AppWSContext, WsBroadcastEvent, WsEventName } from '@messanger/types';
 import { randomUUID } from 'crypto';
-import { logger } from '@messanger/utils';
+import { logger } from '@messanger/utils/src/loggers';
 export const { upgradeWebSocket, websocket } = createBunWebSocket();
 const ALLOWED_TOPICS = [WsTopic.Conversations, WsTopic.Notifications];
 

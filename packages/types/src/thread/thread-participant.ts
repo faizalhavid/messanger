@@ -1,6 +1,6 @@
 import type { Thread, ThreadParticipant, User, Profile } from '@prisma/client';
 import { ThreadModelMapper, type ThreadPublic } from './thread';
-import type { UserProfileThread } from 'packages/types';
+import type { UserProfileThread } from '@messanger/types';
 
 export interface ThreadParticipantsRequest {
   // threadId: string;
