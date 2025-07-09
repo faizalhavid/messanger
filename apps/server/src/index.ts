@@ -103,13 +103,19 @@ api.get('/seed', async (c) => {
 api.get('', (c) => c.text('Hello Hono!'))
 api.route('/users', userController);
 api.route('/auth', authController);
+
+
 api.route('/threads', threadController);
-api.route('/threads/markers', threadMarkersController);
+api.route('/threads/:threadId/markers', threadMarkersController);
+
 api.route('/threads/:threadId/conversations', conversationController);
 api.route('/threads/:threadId/conversations/:conversationId/markers', conversationMarkersController);
+
 api.route('/threads/:threadId/participants', threadParticipantsController);
+
+
 api.route('/friendship', friendshipController);
-api.route('/friendship/markers', friendshipMarkersController);
+api.route('/friendship/:friendship/markers', friendshipMarkersController);
 
 app.route('/api', api);
 

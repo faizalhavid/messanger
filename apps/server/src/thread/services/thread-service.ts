@@ -1,5 +1,5 @@
 import { prismaClient } from '@messanger/prisma';
-import { fileTypeSchema, ImageType, imageTypeSchema, ThreadList, ThreadModelMapper, ThreadRequest, threadSchema, WsEventName, WsTopic } from '@messanger/types';
+import { ConversationPublic, fileTypeSchema, ImageType, imageTypeSchema, ThreadList, ThreadModelMapper, ThreadRequest, threadSchema, WsEventName, WsTopic } from '@messanger/types';
 import { PaginatedData, PaginationMeta, ThreadConversationList, QueryParamsData } from '@messanger/types';
 import { server } from 'src';
 import { ConversationStatusService } from 'src/conversation/services/conversation-status-service';
@@ -112,7 +112,11 @@ export class ThreadService {
     };
   }
 
-  static async getThreadConversations(threadId: string, userId: string, queryParams: QueryParamsData): Promise<PaginatedData<ThreadConversationList | null>> {
+  static async getThreadConversations(
+    threadId: string,
+    userId: string,
+    queryParams: QueryParamsData
+  ): Promise<PaginatedData<ConversationPublic>> {
     const { sortBy = 'createdAt', sortOrder = 'desc', page = 1, pageSize = 10, search, ...rest } = queryParams;
     const skip = (page - 1) * pageSize;
     const take = parseInt(String(pageSize), 10);
@@ -234,9 +238,8 @@ export class ThreadService {
             profile: conversation.sender.profile === null ? undefined : conversation.sender.profile,
           },
           status: conversationStatus[0],
-        })),
-        undefined
-      ),
+        })), undefined
+      ).conversations,
       meta,
     };
   }
