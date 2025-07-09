@@ -157,3 +157,16 @@ export const logoutSchema = z.object({
 export const tokenSchema = z.string().min(1, "Token is required");
 
 
+export const markObjectSchema = z.object({
+    markableType: z.enum(['CONVERSATION', 'THREAD', 'FRIENDSHIP']),
+    markableId: z.string().min(1, "Markable ID is required"),
+    userId: z.string().min(1, "User ID is required"),
+    marker: z.string().min(1, "Marker is required"),
+}).refine(
+    (data) => !!data.markableType && !!data.markableId && !!data
+        .userId && !!data.marker,
+    {
+        message: "Markable type, ID, user ID, and marker are required.",
+        path: ['markableType', 'markableId', 'userId', 'marker'],
+    }
+);

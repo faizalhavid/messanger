@@ -10,7 +10,7 @@ const controller = threadController;
 controller.get('/', async (c) => {
   const user = c.get('authenticatedUser');
   const queryParams = c.req.query();
-  const { items, meta } = await ThreadService.getThreads(user.id, queryParams);
+  const { items, meta } = await ThreadService.getAllThreads(user.id, queryParams);
   return c.json({
     success: true,
     message: 'Threads retrieved successfully',

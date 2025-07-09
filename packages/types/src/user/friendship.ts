@@ -1,4 +1,4 @@
-import type { Friendship, User } from '@prisma/client';
+import type { Friendship, Profile, User } from '@prisma/client';
 import { UserModelMapper, type UserProfile, type UserProfileThread } from '@messanger/types';
 
 export interface FriendshipRequest {
@@ -23,7 +23,7 @@ export namespace FriendshipModelMapper {
     };
   };
 
-  export const toList = (friendship: Friendship & { friend: User }): FriendshipList => {
+  export const toList = (friendship: Friendship & { friend: User & { profile?: Profile } }): FriendshipList => {
     return {
       ...friendship,
       friend: UserModelMapper.fromUserToUserProfileThread(friendship.friend),

@@ -24,6 +24,24 @@ datasource db {
  * }
  */
 
+enum FriendshipStatus {
+  PENDING
+  ACCEPTED
+  BLOCKED
+  DECLINED
+}
+
+enum ThreadType {
+  PRIVATE
+  GROUP
+}
+
+enum MarkableType {
+  CONVERSATION
+  THREAD
+  FRIENDSHIP
+}
+
 model User {
   id        String    @id @default(cuid())
   createdAt DateTime  @default(now()) @map("created_at")
@@ -47,7 +65,8 @@ model User {
   friendOf             Friendship[]        @relation("FriendOfFriendships")
   initiatedFriendships Friendship[]        @relation("InitiatorFriendships")
 
-  conversationStatus ConversationStatus[]
+  marks              MarkObject[]
+  ConversationStatus ConversationStatus[]
 
   @@index([username], name: "idx_username")
   @@index([email], name: "idx_email")
@@ -79,18 +98,12 @@ model Friendship {
   updatedAt   DateTime         @updatedAt
   initiatorId String // who sent the request (userId or friendId)
 
-  user      User @relation("UserFriendships", fields: [userId], references: [id])
-  friend    User @relation("FriendOfFriendships", fields: [friendId], references: [id])
-  initiator User @relation("InitiatorFriendships", fields: [initiatorId], references: [id])
+  user      User         @relation("UserFriendships", fields: [userId], references: [id])
+  friend    User         @relation("FriendOfFriendships", fields: [friendId], references: [id])
+  initiator User         @relation("InitiatorFriendships", fields: [initiatorId], references: [id])
+  marks     MarkObject[] @relation("FriendshipMarks")
 
   @@unique([userId, friendId], name: "unique_friendship_pair")
-}
-
-enum FriendshipStatus {
-  PENDING
-  ACCEPTED
-  BLOCKED
-  DECLINED
 }
 
 model Biodata {
@@ -106,11 +119,6 @@ model Biodata {
   Profile Profile[]
 
   @@map("biodata")
-}
-
-enum ThreadType {
-  PRIVATE
-  GROUP
 }
 
 /// Thread untuk percakapan (PRIVATE atau GROUP)
@@ -129,6 +137,7 @@ model Thread {
 
   participants ThreadParticipant[]
   messages     Conversation[]
+  marks        MarkObject[]        @relation("ThreadMarks")
 
   @@index([type])
 }
@@ -162,6 +171,7 @@ model Conversation {
   sender User   @relation("SentConversations", fields: [senderId], references: [id], onDelete: Cascade)
 
   conversationStatus   ConversationStatus[]
+  marks                MarkObject[]         @relation("ConversationMarks")
   encryptionMetadata   EncryptionMetadata?  @relation(fields: [encryptionMetadataId], references: [id])
   encryptionMetadataId String?
 
@@ -178,6 +188,27 @@ model EncryptionMetadata {
   Conversation Conversation[]
 
   @@map("encryption_metadata")
+}
+
+model MarkObject {
+  id               String       @id @default(cuid())
+  userId           String
+  markableType     MarkableType
+  markableObjectId String
+  marker           String       @db.VarChar(255)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  isDeleted        Boolean      @default(false) @map("is_deleted")
+  deletedAt        DateTime?    @map("deleted_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  conversation Conversation @relation("ConversationMarks", fields: [markableObjectId], references: [id], map: "conversation_marks", onDelete: Cascade)
+  friendship   Friendship   @relation("FriendshipMarks", fields: [markableObjectId], references: [id], map: "friendship_marks", onDelete: Cascade)
+  thread       Thread       @relation("ThreadMarks", fields: [markableObjectId], references: [id], map: "thread_marks", onDelete: Cascade)
+
+  @@unique([userId, markableType, markableObjectId, marker])
+  @@index([markableType, markableObjectId])
 }
 
 model ConversationStatus {

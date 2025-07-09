@@ -11,7 +11,7 @@ export class ThreadService {
   private static conversationRepository = prismaClient.conversation;
   private static conversationStatusRepository = prismaClient.conversationStatus;
 
-  static async getThreads(userId: string, queryParams: QueryParamsData): Promise<PaginatedData<ThreadList>> {
+  static async getAllThreads(userId: string, queryParams: QueryParamsData): Promise<PaginatedData<ThreadList>> {
     const { sortBy = 'createdAt', sortOrder = 'desc', page = 1, pageSize = 10, search, ...rest } = queryParams;
     const skip = (page - 1) * pageSize;
     const take = pageSize;
@@ -85,21 +85,21 @@ export class ThreadService {
           ...restThread,
           creator: thread.creator
             ? {
-                ...thread.creator,
-                profile: thread.creator.profile === null ? undefined : thread.creator.profile,
-              }
+              ...thread.creator,
+              profile: thread.creator.profile === null ? undefined : thread.creator.profile,
+            }
             : undefined,
         },
         lastConversation
           ? {
-              ...lastConversation,
-              sender: lastConversation.sender
-                ? {
-                    ...lastConversation.sender,
-                    profile: lastConversation.sender.profile ?? undefined,
-                  }
-                : undefined,
-            }
+            ...lastConversation,
+            sender: lastConversation.sender
+              ? {
+                ...lastConversation.sender,
+                profile: lastConversation.sender.profile ?? undefined,
+              }
+              : undefined,
+          }
           : undefined,
         unreadCounts.find((uc) => uc.conversationId === lastConversation?.id)?._count?.conversationId || 0,
         thread.participants.map((p) => p.user)
@@ -291,9 +291,9 @@ export class ThreadService {
         ...thread,
         creator: thread.creator
           ? {
-              ...thread.creator,
-              profile: thread.creator.profile === null ? undefined : thread.creator.profile,
-            }
+            ...thread.creator,
+            profile: thread.creator.profile === null ? undefined : thread.creator.profile,
+          }
           : undefined,
       },
       undefined,

@@ -11,6 +11,9 @@ import { ConversationTest, ProfileTest, usersTest, UserTest } from 'tests/test-u
 import { threadController } from './thread/controllers/thread-controller';
 import { threadParticipantsController } from './thread/controllers/thread-participants-controller';
 import { friendshipController } from './user/controllers/friendship-controller';
+import { conversationMarkersController } from './marker-object/controllers/conversation-markers-controllers';
+import { threadMarkersController } from './marker-object/controllers/thread-markers-controllers';
+import { friendshipMarkersController } from './marker-object/controllers/friendship-markers-controllers';
 
 
 const app = new Hono<{ Variables: HonoContext }>();
@@ -101,9 +104,12 @@ api.get('', (c) => c.text('Hello Hono!'))
 api.route('/users', userController);
 api.route('/auth', authController);
 api.route('/threads', threadController);
+api.route('/threads/markers', threadMarkersController);
 api.route('/threads/:threadId/conversations', conversationController);
+api.route('/threads/:threadId/conversations/:conversationId/markers', conversationMarkersController);
 api.route('/threads/:threadId/participants', threadParticipantsController);
-api.route('/friends', friendshipController);
+api.route('/friendship', friendshipController);
+api.route('/friendship/markers', friendshipMarkersController);
 
 app.route('/api', api);
 

@@ -12,6 +12,8 @@ export * from './src/conversation/conversation-encryption';
 export * from './src/thread/thread';
 export * from './src/thread/thread-participant';
 
+export * from './src/marker-object/marker-object';
+
 export * from './src/file';
 
 export * from './src/api-response';
