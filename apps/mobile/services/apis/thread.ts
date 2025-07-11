@@ -11,6 +11,7 @@ export const getThreads = async (queryParams?: QueryParamsData): Promise<Paginat
       throw new Error('Failed to fetch threads');
     }
     const data: PaginatedResponse<ThreadList> = response.data;
+    console.log('Fetched threads:', data);
     return data;
   } catch (error) {
     console.error('Error fetching threads:', error);

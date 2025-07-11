@@ -14,7 +14,7 @@ export interface UserProfileRequest extends Omit<UserProfileThread, 'avatar' | '
   // bio?: string;
 }
 
-export interface UserPublic extends Omit<User, 'password' | 'lastLogin' | 'token'> {}
+export interface UserPublic extends Omit<User, 'password' | 'lastLogin' | 'token'> { }
 
 export type UserProfileThread = {
   id: string;
@@ -28,7 +28,8 @@ export interface UserProfile extends UserPublic {
 
 export namespace UserModelMapper {
   export function fromUserToUserPublic(user: User): UserPublic {
-    return user;
+    const { password, lastLogin, token, ...userPublic } = user;
+    return userPublic;
   }
   export function fromUserToUserProfileThread(user: User & { profile?: Profile }): UserProfileThread {
     return {

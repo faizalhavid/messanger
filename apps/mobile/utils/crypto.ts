@@ -1,19 +1,27 @@
-import RNSimpleCrypto from 'react-native-simple-crypto';
+import * as Crypto from 'expo-crypto';
+import * as Random from 'expo-random';
+import CryptoJS from 'crypto-js';
 
-const { RSA } = RNSimpleCrypto;
-
-export async function generateKeyPair() {
-  const keys = await RSA.generateKeys(2048);
-  return {
-    publicKey: keys.public,
-    privateKey: keys.private,
-  };
+/**
+ * Generate 256-bit (32 bytes) random key
+ */
+export async function generateKey(): Promise<string> {
+  const keyBytes = await Random.getRandomBytesAsync(32);
+  return Buffer.from(keyBytes).toString('hex'); // or base64
 }
 
-export async function encryptionData(pubKey: string, content: string): Promise<string> {
-  return await RSA.encrypt(content, pubKey); // base64
+/**
+ * Encrypt using AES
+ */
+export function encryptionData(secretKey: string, content: string): string {
+  const encrypted = CryptoJS.AES.encrypt(content, secretKey).toString();
+  return encrypted;
 }
 
-export async function decryptionData(privKey: string, content: string): Promise<string> {
-  return await RSA.decrypt(content, privKey); // string
+/**
+ * Decrypt AES
+ */
+export function decryptionData(secretKey: string, encrypted: string): string {
+  const bytes = CryptoJS.AES.decrypt(encrypted, secretKey);
+  return bytes.toString(CryptoJS.enc.Utf8);
 }

@@ -54,7 +54,7 @@ export default function AppSafeArea({
         }
     }, [errorMessage, onDismissError]);
 
-    const spacedChildren = space
+    const spacedChildren = space > 0
         ? React.Children.toArray(children).map((child, idx, arr) => (
             <View key={idx} style={idx < arr.length - 1
                 ? (flexDirection === 'row'

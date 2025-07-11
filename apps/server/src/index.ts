@@ -34,24 +34,24 @@ api.get('/seed', async (c) => {
     await UserTest.deleteAll();
     await ConversationTest.deleteAll();
     // Seed the database with initial data
-    // await UserTest.create(usersTest[0]);
-    // await ProfileTest.create({
-    //     userId: usersTest[0].id,
-    //     profile: {
-    //         firstName: 'John',
-    //         lastName: 'Doe',
-    //         avatar: 'https://example.com/avatar.jpg',
-    //     }
-    // });
-    // await UserTest.create(usersTest[1]);
-    // await ProfileTest.create({
-    //     userId: usersTest[1].id,
-    //     profile: {
-    //         firstName: 'Jane',
-    //         lastName: 'Doe',
-    //         avatar: 'https://example.com/avatar2.jpg',
-    //     }
-    // });
+    await UserTest.create(usersTest[0]);
+    await ProfileTest.create({
+        userId: usersTest[0].id,
+        profile: {
+            firstName: 'John',
+            lastName: 'Doe',
+            avatar: 'https://example.com/avatar.jpg',
+        }
+    });
+    await UserTest.create(usersTest[1]);
+    await ProfileTest.create({
+        userId: usersTest[1].id,
+        profile: {
+            firstName: 'Jane',
+            lastName: 'Doe',
+            avatar: 'https://example.com/avatar2.jpg',
+        }
+    });
     // await ConversationTest.create({
     //     id: '1',
     //     content: 'Hello, this is a test conversation',
@@ -115,7 +115,7 @@ api.route('/threads/:threadId/participants', threadParticipantsController);
 
 
 api.route('/friendship', friendshipController);
-api.route('/friendship/:friendship/markers', friendshipMarkersController);
+api.route('/friendship/:friendshipId/markers', friendshipMarkersController);
 
 app.route('/api', api);
 

@@ -58,6 +58,7 @@ export default function Login() {
     }
     try {
       const response = await postLogin(data);
+      console.log("response : ", response)
       if (response.success) {
         // Handle successful login, e.g., navigate to the main app screen
         //router.push('/(tabs)');

@@ -13,6 +13,7 @@ import SpeedDial from '@/components/SpeedDial';
 import { getThreads } from '@/services/apis/thread';
 import { useMutationThreadQuery, useThreadQuery } from '@/services/queries/threads-query';
 import ThreadListItem from '@/components/messages/thread-list-item';
+import FriendshipModal from '@/components/FriendshipModal';
 
 export default function ThreadsPage() {
   const router = useRouter();
@@ -26,14 +27,14 @@ export default function ThreadsPage() {
   const { mutate: sendThread, isPending, error } = useMutationThreadQuery(Array.isArray(data) ? data[0]?.id : '');
 
   const pageState = React.useState({
-    isLoading: false,
-    refreshing: false,
+    isSpeedDialVisible: true,
     isSpeedDialExtended: true,
+    isModalFriendshipVisible: false,
     generalError: '',
   });
 
   return (
-    <AppSafeArea loading={pageState[0].isLoading} errorMessage={pageState[0].generalError} onDismissError={() => pageState[1]({ ...pageState[0], generalError: '' })} refreshing={pageState[0].refreshing} padding={{ top: 12, left: 0, right: 0 }}>
+    <>
       <Appbar.Header>
         <Appbar.Content title="Messages" />
         <Appbar.Action
@@ -50,49 +51,71 @@ export default function ThreadsPage() {
           }}
         />
       </Appbar.Header>
-      <FlatList
-        data={data}
-        style={{ minHeight: '100%' }}
-        keyExtractor={(item: ThreadList) => item.id || ''}
-        renderItem={({ item }) => {
-          const avatarThread = item.type === 'PRIVATE' ? item.lastConversation?.sender?.avatar : item.avatar;
-          const titleThread = item.type === 'PRIVATE' ? item.lastConversation?.sender?.username : item.name;
-          return (
-            <ThreadListItem
-              threadId={item.id}
-              title={titleThread ?? ''}
-              creator={item?.creator}
-              participants={item.participants}
-              onPress={() => {
-                console.log('Selected conversation', item);
-                if (item.id) {
-                  router.push({ pathname: '/conversations/[id]', params: { id: item.id } });
-                }
-              }}
-              unreadCount={item.unreadCount || 0}
-              lastConversation={item.lastConversation}
-              avatar={avatarThread}
-              type={item.type}
-            />
-          );
-        }}
-        ItemSeparatorComponent={() => <Divider style={{ marginVertical: 12 }} />}
-        refreshControl={<RefreshControl refreshing={pageState[0].refreshing} onRefresh={refetch} />}
-        contentContainerStyle={{ flexGrow: 1 }}
-        ListEmptyComponent={pageState[0].isLoading ? <Text style={{ textAlign: 'center', marginTop: 32 }}>No conversations found.</Text> : null}
-      />
-      <SpeedDial
-        visible={true}
-        extended={pageState[0].isSpeedDialExtended}
-        label="New Message"
-        animateFrom="right"
-        iconMode="static"
-        icon="plus"
-        onPress={() => {
-          console.log('New conversation pressed');
-          // router.push('/conversations/new');
-        }}
-      />
-    </AppSafeArea>
+      <AppSafeArea space={0} errorMessage={pageState[0].generalError} onDismissError={() => pageState[1]({ ...pageState[0], generalError: '' })} refreshing={isRefetching} padding={{ top: 12, left: 0, right: 0 }}>
+
+        <FlatList
+          data={data}
+          keyExtractor={(item: ThreadList) => item.id || ''}
+          style={{ backgroundColor: 'black', minHeight: '100%' }}
+          renderItem={({ item }) => {
+            const avatarThread = item.type === 'PRIVATE' ? item.lastConversation?.sender?.avatar : item.avatar;
+            const titleThread = item.type === 'PRIVATE' ? item.lastConversation?.sender?.username : item.name;
+            return (
+              <ThreadListItem
+                threadId={item.id}
+                title={titleThread ?? ''}
+                creator={item?.creator}
+                participants={item.participants}
+                onPress={() => {
+                  console.log('Selected conversation', item);
+                  if (item.id) {
+                    router.push({ pathname: '/conversations/[id]', params: { id: item.id } });
+                  }
+                }}
+                unreadCount={item.unreadCount || 0}
+                lastConversation={item.lastConversation}
+                avatar={avatarThread}
+                type={item.type}
+              />
+            );
+          }}
+          ItemSeparatorComponent={() => <Divider style={{ marginVertical: 12 }} />}
+          refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
+          contentContainerStyle={{ flexGrow: 1 }}
+          onScroll={
+            (event) => {
+              pageState[1]({
+                ...pageState[0],
+                isSpeedDialVisible: event.nativeEvent.contentOffset.y < 100,
+              });
+            }
+          }
+          ListEmptyComponent={isLoading || data?.length === 0 ? <Text style={{ textAlign: 'center', marginTop: 32, color: 'white' }}>No conversations found.</Text> : null}
+        />
+        <SpeedDial
+          visible={pageState[0].isSpeedDialVisible}
+          extended={pageState[0].isSpeedDialExtended}
+          label="New Message"
+          animateFrom="right"
+          iconMode="static"
+          icon="plus"
+          style={{
+            position: 'absolute',
+            bottom: 16,
+            backgroundColor: '#6200ee',
+          }}
+          onPress={() => {
+            console.log('New conversation pressed');
+            pageState[1]({ ...pageState[0], isSpeedDialExtended: false, isModalFriendshipVisible: true });
+            // router.push('/conversations/new');
+          }}
+        />
+        <FriendshipModal isModalVisible={pageState[0].isModalFriendshipVisible} onDismiss={() => pageState[1]({ ...pageState[0], isModalFriendshipVisible: false })} onRequestFriendship={(friendship) => {
+          console.log('Requesting friendship:', friendship);
+
+        }} />
+      </AppSafeArea>
+    </>
+
   );
 }

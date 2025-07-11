@@ -4,7 +4,7 @@ import { loginSchema, registerSchema } from '@messanger/types';
 import { HTTPException } from 'hono/http-exception';
 import { UserModelMapper } from '@messanger/types';
 import { Context } from 'hono';
-import { generateKeyPair } from '@messanger/utils';
+import { exportKey, generateKeyPair } from '@messanger/utils';
 
 export class AuthService {
   private static userRepository = prismaClient.user;
@@ -30,14 +30,23 @@ export class AuthService {
     const token = crypto.randomUUID();
 
     const { publicKey, privateKey } = await generateKeyPair();
+    const privateKeyString = await exportKey(privateKey);
+    const publicKeyString = await exportKey(publicKey);
+
+    if (!publicKeyString || !privateKeyString) {
+      throw new HTTPException(500, {
+        message: 'Failed to generate keys',
+      });
+    }
+
     user = await this.userRepository.update({
       where: { id: user.id },
-      data: { token, pubKey: publicKey.toString() },
+      data: { token, pubKey: publicKeyString },
     });
 
     const response: LoginResponse = {
       token,
-      privateKey: privateKey.toString(),
+      privateKey: privateKeyString,
       user: UserModelMapper.fromUserToUserPublic(user),
     };
 

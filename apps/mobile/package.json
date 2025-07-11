@@ -4,8 +4,8 @@
   "version": "1.0.0",
   "scripts": {
     "start": "expo start",
+    "start with clear cache and tunnel": "expo start -c --tunnel",
     "android": "expo start --android -c",
-    "android with tunnel": "expo start --android -c --tunnel",
     "ios": "expo start --ios",
     "web": "expo start --web",
     "test": "jest --watchAll"
@@ -25,7 +25,9 @@
     "axios": "^1.9.0",
     "base-64": "^1.0.0",
     "buffer": "^6.0.3",
+    "crypto-js": "^4.2.0",
     "expo": "^53.0.10",
+    "expo-crypto": "~14.1.5",
     "expo-dev-client": "~5.2.0",
     "expo-font": "~13.3.1",
     "expo-linking": "~7.1.5",
@@ -38,15 +40,14 @@
     "react-dom": "19.0.0",
     "react-native": "0.79.3",
     "react-native-paper": "^5.14.5",
-    "react-native-quick-crypto": "^0.7.15",
     "react-native-safe-area-context": "5.4.0",
     "react-native-screens": "~4.11.1",
-    "react-native-simple-crypto": "^0.2.15",
     "react-native-web": "~0.20.0",
     "zustand": "^5.0.5"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
+    "@types/crypto-js": "^4.2.2",
     "@types/react": "~19.0.10",
     "jest": "^29.2.1",
     "jest-expo": "~53.0.6",
