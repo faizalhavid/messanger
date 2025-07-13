@@ -1,8 +1,10 @@
 import { prismaClient } from '@messanger/prisma';
-import { QueryParamsData, FriendshipList, FriendshipModelMapper, FriendshipRequest, friendshipSchema, PaginatedData, PaginationMeta } from '@messanger/types';
+import { QueryParamsData, FriendshipList, FriendshipModelMapper, FriendshipRequest, friendshipSchema, PaginatedData, PaginationMeta, UserModelMapper, UserProfile, FriendshipStatusEnum } from '@messanger/types';
+import { HTTPException } from 'hono/http-exception';
 
 export class FriendshipService {
   private static friendshipRepository = prismaClient.friendship;
+  private static friendshipStatusLogRepository = prismaClient.friendshipStatusLog;
   private static userRepository = prismaClient.user;
 
   static async createFriendship(req: FriendshipRequest, userId: string): Promise<FriendshipList> {
@@ -16,13 +18,23 @@ export class FriendshipService {
         userId: validatedData.userId,
         friendId: validatedData.friendId,
         initiatorId: validatedData.userId,
-        status: validatedData.status,
+        statusLogs: {
+          create: {
+            status: validatedData.status,
+            changedAt: new Date(),
+            changedBy: { connect: { id: validatedData.userId } },
+          },
+        },
       },
       include: {
         friend: true,
+        statusLogs: {
+          orderBy: { changedAt: 'desc' },
+          take: 1,
+        },
       },
     });
-    return FriendshipModelMapper.toList(friendship);
+    return FriendshipModelMapper.toList({ ...friendship, statusLogs: friendship.statusLogs[0] });
   }
 
   static async getFriendshipList(userId: string, queryParams: QueryParamsData): Promise<PaginatedData<FriendshipList>> {
@@ -32,6 +44,11 @@ export class FriendshipService {
 
     const where: any = {
       userId: userId,
+      status: {
+        not: 'BLOCKED',
+      },
+      isActive: true,
+      isDeleted: false,
     };
 
     if (search) {
@@ -49,6 +66,10 @@ export class FriendshipService {
       orderBy: { [sortBy]: sortOrder },
       include: {
         friend: true,
+        statusLogs: {
+          orderBy: { changedAt: 'desc' },
+          take: 1,
+        },
       },
     });
 
@@ -62,7 +83,7 @@ export class FriendshipService {
     };
 
     return {
-      items: friendships.map(FriendshipModelMapper.toList),
+      items: friendships.map((friend) => FriendshipModelMapper.toList({ ...friend, statusLogs: friend.statusLogs[0] })),
       meta,
     };
   }
@@ -75,14 +96,30 @@ export class FriendshipService {
       },
       include: {
         friend: true,
+        statusLogs: {
+          orderBy: { changedAt: 'desc' },
+          take: 1,
+        },
       },
     });
     if (!friendship) throw new Error('Friendship not found');
-    return FriendshipModelMapper.toList(friendship);
+    return FriendshipModelMapper.toList({
+      ...friendship,
+      statusLogs: friendship.statusLogs[0],
+    });
   }
 
-  static async updateFriendshipStatus(userId: string, friendId: string, status: 'PENDING' | 'ACCEPTED' | 'BLOCKED' | 'DECLINED'): Promise<FriendshipList> {
-    const friendship = await this.friendshipRepository.update({
+  static async updateFriendshipStatus(userId: string, friendId: string, status: FriendshipStatusEnum): Promise<FriendshipList> {
+    const exitingFriendships = await this.friendshipRepository.findFirst({
+      where: {
+        userId,
+        friendId,
+      },
+    });
+
+    if (!exitingFriendships) throw new HTTPException(404, { message: 'Friendship not found' });
+
+    const friendship = await this.friendshipStatusLogRepository.create({
       where: {
         unique_friendship_pair: {
           userId,
@@ -91,9 +128,8 @@ export class FriendshipService {
       },
       data: {
         status,
-      },
-      include: {
-        friend: true,
+        changedAt: new Date(),
+        changedBy: { connect: { id: userId } },
       },
     });
     return FriendshipModelMapper.toList(friendship);
@@ -115,5 +151,44 @@ export class FriendshipService {
         },
       },
     });
+  }
+
+  static async findFriendships(queryParams?: QueryParamsData): Promise<PaginatedData<UserProfile>> {
+    const { sortBy = 'createdAt', sortOrder = 'desc', page = 1, pageSize = 10, search, ...rest } = queryParams || {};
+    const skip = (page - 1) * pageSize;
+    const take = pageSize;
+    const where: any = {
+      isActive: true,
+      isDeleted: false,
+    };
+    if (search) {
+      where.OR = [{ username: { contains: search, mode: 'insensitive' } }, { email: { contains: search, mode: 'insensitive' } }];
+    }
+
+    const users = await this.userRepository.findMany({
+      where,
+      skip,
+      take,
+      orderBy: { [sortBy]: sortOrder },
+      include: { profile: true },
+    });
+
+    if (!users) throw new HTTPException(404, { message: 'User not found' });
+
+    const total = await this.userRepository.count({ where });
+
+    const meta: PaginationMeta = {
+      totalItems: total,
+      totalPages: Math.ceil(total / pageSize),
+      page,
+      pageSize,
+      hasNextPage: skip + take < total,
+      hasPreviousPage: skip > 0,
+    };
+
+    return {
+      items: users.map((user) => UserModelMapper.fromUserToUserProfile({ ...user, profile: user.profile! })),
+      meta,
+    };
   }
 }

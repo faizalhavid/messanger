@@ -4,7 +4,7 @@ import { ConversationPublic, ConversationRequest, FriendshipRequest, QueryParams
 import { queryClient } from '.';
 import { decryptionData } from '@utils/crypto';
 import { getDataFromLocalStorage } from '@/utils/local-storage';
-import { getFriendshipById, getFriendships, postFriendship, putFriendship } from '../apis/friendship';
+import { findFriendship, getFriendshipById, getFriendships, postFriendship, putFriendship } from '../apis/friendship';
 
 export const friendshipKey = {
   all: ['friendship'] as const,
@@ -31,6 +31,17 @@ export function useFriendshipDetailQuery(friendshipId: string) {
     placeholderData: () => queryClient.getQueryData(friendshipKey.detail(friendshipId)),
     //select: (data) => (Array.isArray(data) ? data : data?.data?.items ?? []),
     enabled: !!friendshipId,
+  });
+}
+
+export function useFindFriendshipQuery(queryParams: QueryParamsData) {
+  return useQuery({
+    queryKey: friendshipKey.all,
+    queryFn: () => findFriendship(queryParams),
+    select: (data) => (Array.isArray(data) ? data : data?.data?.items ?? []),
+    placeholderData: () => queryClient.getQueryData(friendshipKey.all),
+    retry: false,
+    enabled: !!queryParams.search,
   });
 }
 

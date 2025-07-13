@@ -1,7 +1,7 @@
 import React from 'react';
 import { encryptionData } from '@utils/crypto';
 import AppSafeArea from '@/components/AppSafeArea';
-import ConversationBubleChat from '@/components/messages/conversation-buble-chat';
+import ConversationBubleChat from '@/components/ConversationBubble';
 import Spacer from '@/components/Spacer';
 import StackWrapper from '@/components/StackWrapper';
 import { appColors } from '@/components/themes/colors';

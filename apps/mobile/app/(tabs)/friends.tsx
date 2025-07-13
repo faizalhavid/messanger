@@ -3,37 +3,27 @@ import React, { useEffect } from 'react';
 import { Appbar, Divider, Text } from 'react-native-paper';
 import AppSafeArea from '@/components/AppSafeArea';
 import { useRouter } from 'expo-router';
-import { QueryParamsData, ThreadList, ThreadPublic } from '@messanger/types';
+import { FriendshipList, QueryParamsData, ThreadList, ThreadPublic } from '@messanger/types';
 import { useAuthStore } from '@/store/auth';
 import SpeedDial from '@/components/SpeedDial';
 import { useMutationThreadQuery, useThreadQuery } from '@/services/queries/threads-query';
 import ThreadListItem from '@/components/ListItem/ThreadListItem';
 import FriendshipModal from '@/components/FriendshipModal';
 import { useFriendshipQuery, useMutationFriendshipQuery } from '@/services/queries/friendship-query';
+import FriendListItem from '@/components/ListItem/FirendListItem';
 
-export default function ThreadsPage() {
+export default function FriendsPage() {
   const router = useRouter();
-  const [queryParams, setQueryParams] = React.useState<{
-    thread: QueryParamsData;
-    friendship: QueryParamsData;
-  }>({
-    thread: {
-      search: '',
-      page: 1,
-      limit: 20,
-    },
-    friendship: {
-      search: '',
-      page: 1,
-      limit: 20,
-    },
-  });
-  const { data: threadData, isLoading: threadLoading, refetch: refetchThread, isRefetching: isThreadRefetching } = useThreadQuery(queryParams.thread);
-  const { mutate: sendThread, isPending: isThreadPending, error: errorThread } = useMutationThreadQuery(Array.isArray(threadData) ? threadData[0]?.id : '');
   const { user } = useAuthStore();
 
-  const { data: friendshipData, isLoading: friendshipLoading, refetch: refetchFriendship, isRefetching: isFriendshipRefetching } = useFriendshipQuery(queryParams.friendship);
-  const { data: findFriendshipData, isLoading: findFriendshipLoading, refetch: refetchFindFriendship, isRefetching: isFindFriendshipRefetching } = useFriendshipQuery(queryParams.friendship);
+  const [queryParams, setQueryParams] = React.useState({
+    search: '',
+    page: 1,
+    limit: 20,
+  });
+
+  const { data: friendshipData, isLoading: friendshipLoading, refetch: refetchFriendship, isRefetching: isFriendshipRefetching } = useFriendshipQuery(queryParams);
+  const { data: findFriendshipData, isLoading: findFriendshipLoading, refetch: refetchFindFriendship, isRefetching: isFindFriendshipRefetching } = useFriendshipQuery(queryParams);
   const { mutate: sendFriendship, isPending: isFriendshipPending, error: errorFriendship } = useMutationFriendshipQuery(Array.isArray(friendshipData) ? friendshipData[0]?.id : '');
 
   const pageState = React.useState({
@@ -46,11 +36,11 @@ export default function ThreadsPage() {
   return (
     <>
       <Appbar.Header>
-        <Appbar.Content title="Messages" />
+        <Appbar.Content title="Friends" />
         <Appbar.Action
           icon="magnify"
           onPress={() => {
-            setQueryParams({ ...queryParams, thread: { ...queryParams.thread, search: '' } });
+            setQueryParams({ ...queryParams, search: '' });
           }}
         />
         <Appbar.Action
@@ -63,33 +53,14 @@ export default function ThreadsPage() {
       </Appbar.Header>
       <AppSafeArea space={0} errorMessage={pageState[0].generalError} onDismissError={() => pageState[1]({ ...pageState[0], generalError: '' })} refreshing={isThreadRefetching} padding={{ top: 12, left: 0, right: 0 }}>
         <FlatList
-          data={threadData}
-          keyExtractor={(item: ThreadList) => item.id || ''}
+          data={friendshipData || []}
+          keyExtractor={(item: FriendshipList) => item.id || ''}
           style={{ backgroundColor: 'black', minHeight: '100%' }}
           renderItem={({ item }) => {
-            const avatarThread = item.type === 'PRIVATE' ? item.lastConversation?.sender?.avatar : item.avatar;
-            const titleThread = item.type === 'PRIVATE' ? item.lastConversation?.sender?.username : item.name;
-            return (
-              <ThreadListItem
-                threadId={item.id}
-                title={titleThread ?? ''}
-                creator={item?.creator}
-                participants={item.participants}
-                onPress={() => {
-                  console.log('Selected conversation', item);
-                  if (item.id) {
-                    router.push({ pathname: '/conversations/[id]', params: { id: item.id } });
-                  }
-                }}
-                unreadCount={item.unreadCount || 0}
-                lastConversation={item.lastConversation}
-                avatar={avatarThread}
-                type={item.type}
-              />
-            );
+            return <FriendListItem friendship={item} />;
           }}
           ItemSeparatorComponent={() => <Divider style={{ marginVertical: 12 }} />}
-          refreshControl={<RefreshControl refreshing={isThreadRefetching} onRefresh={refetchThread} />}
+          refreshControl={<RefreshControl refreshing={isFriendshipPending} onRefresh={refetchThread} />}
           contentContainerStyle={{ flexGrow: 1 }}
           onScroll={(event) => {
             pageState[1]({

@@ -1,41 +1,39 @@
-import { BaseApiResponse, HonoContext } from "@messanger/types";
-import { UserModelMapper } from "@messanger/types";
-import { Hono } from "hono";
-import { UserService } from "../services/user-service";
-
+import { BaseApiResponse, HonoContext } from '@messanger/types';
+import { UserModelMapper } from '@messanger/types';
+import { Hono } from 'hono';
+import { UserService } from '../services/user-service';
 
 export const userController = new Hono<{ Variables: HonoContext }>();
 const controller = userController;
 
-
-controller.get("/", async (c) => {
-    const user = c.get("authenticatedUser");
-    const result = await UserService.getUserProfile(user.id);
-    return c.json({
-        success: true,
-        message: "User profile retrieved successfully",
-        data: result
-    });
+controller.get('/', async (c) => {
+  const user = c.get('authenticatedUser');
+  const result = await UserService.getUserProfile(user.id);
+  return c.json({
+    success: true,
+    message: 'User profile retrieved successfully',
+    data: result,
+  });
 });
 
-controller.get("/:id", async (c) => {
-    const userId = c.req.param("id");
-    return c.json({
-        success: true,
-        message: `User with ID ${userId} found`,
-        data: await UserService.getUserProfile(userId)
-    });
+controller.get('/:id', async (c) => {
+  const userId = c.req.param('id');
+  return c.json({
+    success: true,
+    message: `User with ID ${userId} found`,
+    data: await UserService.getUserProfile(userId),
+  });
 });
 
-controller.patch("/:id", async (c) => {
-    const userId = c.req.param("id");
-    const request = await c.req.json();
-    const result = await UserService.updateUserProfile(userId, request);
-    return c.json({
-        success: true,
-        message: "User profile updated successfully",
-        data: result
-    });
+controller.patch('/:id', async (c) => {
+  const userId = c.req.param('id');
+  const request = await c.req.json();
+  const result = await UserService.updateUserProfile(userId, request);
+  return c.json({
+    success: true,
+    message: 'User profile updated successfully',
+    data: result,
+  });
 });
 
 // Todo: Implement avatar update functionality
@@ -57,26 +55,26 @@ controller.patch("/:id", async (c) => {
 //     });
 // });
 
-controller.patch("/:id/activate", async (c) => {
-    const userId = c.req.param("id");
-    const request = await c.req.json();
+controller.patch('/:id/activate', async (c) => {
+  const userId = c.req.param('id');
+  const request = await c.req.json();
 
-    return c.json({
-        success: true,
-        message: "User activation status updated successfully",
-        data: await UserService.updateActivateStatus(userId, request.status)
-    });
+  return c.json({
+    success: true,
+    message: 'User activation status updated successfully',
+    data: await UserService.updateActivateStatus(userId, request.status),
+  });
 });
 
-controller.patch("/:id/delete", async (c) => {
-    const userId = c.req.param("id");
-    const request = await c.req.json();
+controller.patch('/:id/delete', async (c) => {
+  const userId = c.req.param('id');
+  const request = await c.req.json();
 
-    return c.json({
-        success: true,
-        message: "User deletion status updated successfully",
-        data: await UserService.updateDeleteUserStatus(userId, request.status)
-    });
+  return c.json({
+    success: true,
+    message: 'User deletion status updated successfully',
+    data: await UserService.updateDeleteUserStatus(userId, request.status),
+  });
 });
 
 // Todo : Implement search functionality

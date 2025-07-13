@@ -11,15 +11,17 @@ export type UserRequest = {
 export interface UserProfileRequest extends Omit<UserProfileThread, 'avatar' | 'id'> {
   avatar: ImageType;
   username: string;
+  description?: string;
   // bio?: string;
 }
 
-export interface UserPublic extends Omit<User, 'password' | 'lastLogin' | 'token'> { }
+export interface UserPublic extends Omit<User, 'password' | 'lastLogin' | 'token'> {}
 
 export type UserProfileThread = {
   id: string;
   username: string;
   avatar?: string | null;
+  description?: string | null;
 };
 
 export interface UserProfile extends UserPublic {
@@ -36,6 +38,7 @@ export namespace UserModelMapper {
       id: user.id,
       username: user.username,
       avatar: user.profile?.avatar ?? null,
+      description: user.profile?.description ?? null,
     };
   }
 

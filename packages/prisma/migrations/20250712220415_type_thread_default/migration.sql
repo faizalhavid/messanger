@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Thread" ALTER COLUMN "type" SET DEFAULT 'PRIVATE';

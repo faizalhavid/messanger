@@ -4,13 +4,16 @@
   "main": "index.ts",
   "type": "module",
   "scripts": {
+    "generate:enums": "bun generate-enums.ts",
+    "dev": "bun run generate:enums && bunx prisma generate",
     "generate": "prisma generate",
-    "migrate:dev": "prisma migrate dev",
+    "migrate:dev": "bun run generate:enums && bunx prisma migrate dev",
     "migrate:prod": "prisma migrate deploy",
     "seed": "bun run seed.ts"
   },
   "dependencies": {
-    "@prisma/client": "^6.9.0",
-    "prisma": "^6.9.0"
+    "@messanger/types": "workspace:*",
+    "@prisma/client": "^6.11.1",
+    "prisma": "^6.11.1"
   }
 }

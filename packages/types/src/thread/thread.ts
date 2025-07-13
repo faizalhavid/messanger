@@ -1,6 +1,11 @@
 import type { Conversation, Thread, User, Profile, ConversationStatus } from '@prisma/client';
 import { ConversationModelMapper, UserModelMapper, type ConversationPublic, type UserProfileThread } from '@messanger/types';
 
+export enum ThreadTypeEnum {
+  PRIVATE,
+  GROUP,
+}
+
 export interface ThreadRequest {
   name?: string;
   creatorId?: string;

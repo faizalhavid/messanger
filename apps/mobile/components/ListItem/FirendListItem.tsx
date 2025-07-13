@@ -1,0 +1,67 @@
+import { ConversationPublic, ConversationUserProfile, FriendshipList } from '@messanger/types';
+import React from 'react';
+import { Avatar, Badge, List, Text } from 'react-native-paper';
+import { Pressable, StyleSheet, View } from 'react-native';
+import StackWrapper from '../StackWrapper';
+import ParticipantsAvatar from '../ParticipantsAvatar';
+
+type FriendListItem = {
+  friendship: FriendshipList;
+  onPress?: () => void;
+  //onAvatarPress?: (sender: ConversationUserProfile) => void;
+};
+
+export default function FriendListItem({ friendship, onPress }: FriendListItem) {
+  // Todo : Format the createdAt date to a more readable format
+  const handleAvatarPress = () => {
+    console.log('Avatar pressed');
+  };
+
+  return (
+    <List.Item
+      key={friendship.id}
+      style={StyleSheet.flatten([{ paddingVertical: 8, paddingHorizontal: 16 }])}
+      onPress={onPress}
+      title={() => (
+        <StackWrapper flexDirection="row" alignItems="center" justifyContent="space-between">
+          <StackWrapper flexDirection="row" alignItems="center" justifyContent="space-between">
+            <Text variant="titleMedium" numberOfLines={1} ellipsizeMode="tail" style={{ maxWidth: '80%' }}>
+              {friendship.friend.username}
+            </Text>
+          </StackWrapper>
+          <Text variant="bodySmall">{time}</Text>
+        </StackWrapper>
+      )}
+      description={() => (
+        <StackWrapper flexDirection="row" alignItems="center" justifyContent="space-between">
+          {type === 'PRIVATE' ? (
+            <Text variant="bodyMedium" numberOfLines={1} ellipsizeMode="tail" style={{ maxWidth: '80%' }}>
+              {lastConversation?.content}
+            </Text>
+          ) : (
+            <StackWrapper flexDirection="row" space={1}>
+              <Text variant="bodyMedium" numberOfLines={1} ellipsizeMode="tail" style={{ maxWidth: '80%', fontWeight: '500' }}>
+                {lastConversation?.sender?.username}
+              </Text>
+              <Text variant="bodyMedium" numberOfLines={1} ellipsizeMode="tail" style={{ maxWidth: '80%' }}>
+                {lastConversation?.content}
+              </Text>
+            </StackWrapper>
+          )}
+          {unreadCount > 0 && <Badge>{unreadCount}</Badge>}
+        </StackWrapper>
+      )}
+      left={() => (
+        <Pressable onPress={handleAvatarPress} hitSlop={10}>
+          <Avatar.Image size={48} source={{ uri: avatar || 'https://via.placeholder.com/150' }} />
+        </Pressable>
+      )}
+      right={() => {
+        if (type === 'GROUP' && participants) {
+          return <ParticipantsAvatar participants={participants} />;
+        }
+        return null;
+      }}
+    />
+  );
+}

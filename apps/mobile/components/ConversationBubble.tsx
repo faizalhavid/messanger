@@ -1,7 +1,7 @@
 import { ConversationPublic, UserPublic } from '@messanger/types';
 import * as React from 'react';
 import { Avatar, Surface, Text, TouchableRipple } from 'react-native-paper';
-import StackWrapper from '../StackWrapper';
+import StackWrapper from './StackWrapper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Keyboard } from 'react-native';
 

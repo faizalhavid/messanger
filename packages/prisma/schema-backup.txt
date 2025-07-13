@@ -25,27 +25,6 @@ datasource db {
  */
 
 // BEGIN ENUMS
-
-// This file is auto generated. Do not edit manually.
-
-enum MarkableTypeEnum {
-  CONVERSATION
-  THREAD
-  FRIENDSHIP
-}
-
-enum ThreadTypeEnum {
-  PRIVATE
-  GROUP
-}
-
-enum FriendshipStatusEnum {
-  PENDING
-  ACCEPTED
-  BLOCKED
-  DECLINED
-}
-
 // END ENUMS
 
 model User {
@@ -69,11 +48,10 @@ model User {
   thread               Thread[]
   friendships          Friendship[]        @relation("UserFriendships")
   friendOf             Friendship[]        @relation("FriendOfFriendships")
-  initiatedFriendships Friendship[]        @relation("InitiatedFriendships")
+  initiatedFriendships Friendship[]        @relation("InitiatorFriendships")
 
-  marks               MarkObject[]
-  ConversationStatus  ConversationStatus[]
-  FriendshipStatusLog FriendshipStatusLog[]
+  marks              MarkObject[]
+  ConversationStatus ConversationStatus[]
 
   @@index([username], name: "idx_username")
   @@index([email], name: "idx_email")
@@ -98,12 +76,12 @@ model Profile {
 }
 
 model Friendship {
-  id            String               @id @default(uuid())
+  id            String           @id @default(uuid())
   userId        String
   friendId      String
-  currentStatus FriendshipStatusEnum @default(PENDING)
-  createdAt     DateTime             @default(now())
-  updatedAt     DateTime             @updatedAt
+  currentStatus FriendshipStatus @default(PENDING)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
   initiatorId   String
 
   user       User                  @relation("UserFriendships", fields: [userId], references: [id])
@@ -116,10 +94,10 @@ model Friendship {
 }
 
 model FriendshipStatusLog {
-  id           String               @id @default(uuid())
+  id           String           @id @default(uuid())
   friendshipId String
-  status       FriendshipStatusEnum
-  changedAt    DateTime             @default(now())
+  status       FriendshipStatus
+  changedAt    DateTime         @default(now())
   changedById  String
 
   friendship Friendship @relation(fields: [friendshipId], references: [id], onDelete: Cascade)
@@ -146,7 +124,7 @@ model Biodata {
 
 model Thread {
   id        String         @id @default(cuid())
-  type      ThreadTypeEnum @default(PRIVATE)
+  type      ThreadTypeEnum
   name      String? // hanya untuk GROUP
   avatar    String? // hanya untuk GROUP
   creatorId String         @map("createdById")

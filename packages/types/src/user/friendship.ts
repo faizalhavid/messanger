@@ -1,5 +1,12 @@
-import type { Friendship, Profile, User } from '@prisma/client';
+import type { Friendship, FriendshipStatusLog, Profile, User } from '@prisma/client';
 import { UserModelMapper, type UserProfile, type UserProfileThread } from '@messanger/types';
+
+export enum FriendshipStatusEnum {
+  PENDING = 'PENDING',
+  ACCEPTED = 'ACCEPTED',
+  BLOCKED = 'BLOCKED',
+  DECLINED = 'DECLINED',
+}
 
 export interface FriendshipRequest {
   userId: string;
@@ -11,8 +18,11 @@ export interface FriendshipPublic extends Omit<Friendship, 'friendId'> {
   friend: UserProfile;
 }
 
+export interface FriendshipStatusPublic extends FriendshipStatusLog {}
+
 export interface FriendshipList extends Omit<Friendship, 'friendId'> {
   friend: UserProfileThread;
+  status: Omit<FriendshipStatusPublic, 'friendshipId' | 'friendship'>;
 }
 
 export namespace FriendshipModelMapper {
@@ -23,10 +33,13 @@ export namespace FriendshipModelMapper {
     };
   };
 
-  export const toList = (friendship: Friendship & { friend: User & { profile?: Profile } }): FriendshipList => {
+  export const toList = (friendship: Friendship & { friend: User & { profile?: Profile } } & { statusLogs: FriendshipStatusLog }): FriendshipList => {
     return {
       ...friendship,
       friend: UserModelMapper.fromUserToUserProfileThread(friendship.friend),
+      status: {
+        ...friendship.statusLogs,
+      },
     };
   };
 }
