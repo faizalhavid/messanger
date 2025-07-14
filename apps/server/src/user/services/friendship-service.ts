@@ -1,5 +1,5 @@
 import { prismaClient } from '@messanger/prisma';
-import { QueryParamsData, FriendshipList, FriendshipModelMapper, FriendshipRequest, friendshipSchema, PaginatedData, PaginationMeta, UserModelMapper, UserProfile, FriendshipStatusEnum } from '@messanger/types';
+import { QueryParamsData, FriendshipList, FriendshipModelMapper, FriendshipRequest, friendshipSchema, PaginatedData, PaginationMeta, UserModelMapper, UserProfile, FriendshipStatusEnum, UserProfileThread } from '@messanger/types';
 import { HTTPException } from 'hono/http-exception';
 
 export class FriendshipService {
@@ -44,11 +44,11 @@ export class FriendshipService {
 
     const where: any = {
       userId: userId,
-      status: {
-        not: 'BLOCKED',
+      statusLogs: {
+        none: {
+          status: FriendshipStatusEnum.BLOCKED
+        }
       },
-      isActive: true,
-      isDeleted: false,
     };
 
     if (search) {
@@ -115,24 +115,23 @@ export class FriendshipService {
         userId,
         friendId,
       },
+      include: { friend: true }
     });
 
     if (!exitingFriendships) throw new HTTPException(404, { message: 'Friendship not found' });
 
-    const friendship = await this.friendshipStatusLogRepository.create({
-      where: {
-        unique_friendship_pair: {
-          userId,
-          friendId,
-        },
-      },
+    const friendshipStatusLog = await this.friendshipStatusLogRepository.create({
       data: {
+        friendshipId: exitingFriendships.id,
         status,
         changedAt: new Date(),
-        changedBy: { connect: { id: userId } },
+        changedById: userId,
       },
     });
-    return FriendshipModelMapper.toList(friendship);
+    return FriendshipModelMapper.toList({
+      ...exitingFriendships,
+      statusLogs: friendshipStatusLog
+    });
   }
 
   static async deleteFriendship(userId: string, friendId: string): Promise<void> {
@@ -153,7 +152,7 @@ export class FriendshipService {
     });
   }
 
-  static async findFriendships(queryParams?: QueryParamsData): Promise<PaginatedData<UserProfile>> {
+  static async findFriendships(queryParams?: QueryParamsData): Promise<PaginatedData<UserProfileThread>> {
     const { sortBy = 'createdAt', sortOrder = 'desc', page = 1, pageSize = 10, search, ...rest } = queryParams || {};
     const skip = (page - 1) * pageSize;
     const take = pageSize;
@@ -187,7 +186,7 @@ export class FriendshipService {
     };
 
     return {
-      items: users.map((user) => UserModelMapper.fromUserToUserProfile({ ...user, profile: user.profile! })),
+      items: users.map((user) => UserModelMapper.fromUserToUserProfileThread({ ...user, profile: user.profile! })),
       meta,
     };
   }

@@ -8,6 +8,13 @@ export enum FriendshipStatusEnum {
   DECLINED = 'DECLINED',
 }
 
+export const FriendshipColorLabel: Record<FriendshipStatusEnum, string> = {
+  [FriendshipStatusEnum.ACCEPTED]: "green",
+  [FriendshipStatusEnum.DECLINED]: "red",
+  [FriendshipStatusEnum.BLOCKED]: "gray",
+  [FriendshipStatusEnum.PENDING]: "yellow",
+};
+
 export interface FriendshipRequest {
   userId: string;
   friendId: string;
@@ -18,11 +25,11 @@ export interface FriendshipPublic extends Omit<Friendship, 'friendId'> {
   friend: UserProfile;
 }
 
-export interface FriendshipStatusPublic extends FriendshipStatusLog {}
+export interface FriendshipStatusPublic extends Omit<FriendshipStatusLog, 'friendshipId' | 'friendship'> { }
 
-export interface FriendshipList extends Omit<Friendship, 'friendId'> {
+export interface FriendshipList extends Omit<Friendship, 'friendId' | 'currentStatus'> {
   friend: UserProfileThread;
-  status: Omit<FriendshipStatusPublic, 'friendshipId' | 'friendship'>;
+  currentStatus?: Omit<FriendshipStatusPublic, 'friendshipId' | 'friendship'> | null | undefined;
 }
 
 export namespace FriendshipModelMapper {
@@ -37,7 +44,7 @@ export namespace FriendshipModelMapper {
     return {
       ...friendship,
       friend: UserModelMapper.fromUserToUserProfileThread(friendship.friend),
-      status: {
+      currentStatus: {
         ...friendship.statusLogs,
       },
     };

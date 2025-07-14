@@ -1,4 +1,4 @@
-import { FriendshipList, FriendshipRequest, PaginatedResponse, QueryParamsData } from '@messanger/types';
+import { FriendshipList, FriendshipRequest, PaginatedResponse, QueryParamsData, UserProfileThread } from '@messanger/types';
 import axiosInstance from '../axios';
 
 export const getFriendships = async (queryParams?: QueryParamsData): Promise<PaginatedResponse<FriendshipList>> => {
@@ -69,7 +69,7 @@ export const getFriendshipById = async (friendshipId: string): Promise<Friendshi
   }
 };
 
-export const findFriendship = async (queryParams: QueryParamsData): Promise<PaginatedResponse<FriendshipList>> => {
+export const findFriendship = async (queryParams: QueryParamsData): Promise<PaginatedResponse<UserProfileThread>> => {
   try {
     const response = await axiosInstance.get('/friendship/find', {
       params: queryParams,

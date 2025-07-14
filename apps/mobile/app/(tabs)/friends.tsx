@@ -8,9 +8,9 @@ import { useAuthStore } from '@/store/auth';
 import SpeedDial from '@/components/SpeedDial';
 import { useMutationThreadQuery, useThreadQuery } from '@/services/queries/threads-query';
 import ThreadListItem from '@/components/ListItem/ThreadListItem';
-import FriendshipModal from '@/components/FriendshipModal';
-import { useFriendshipQuery, useMutationFriendshipQuery } from '@/services/queries/friendship-query';
-import FriendListItem from '@/components/ListItem/FirendListItem';
+import FriendshipModal from '@/components/Modal/FriendshipModal';
+import { useFindFriendshipQuery, useFriendshipQuery, useMutationFriendshipQuery } from '@/services/queries/friendship-query';
+import FriendListItem from '@/components/ListItem/FriendListItem';
 
 export default function FriendsPage() {
   const router = useRouter();
@@ -23,7 +23,7 @@ export default function FriendsPage() {
   });
 
   const { data: friendshipData, isLoading: friendshipLoading, refetch: refetchFriendship, isRefetching: isFriendshipRefetching } = useFriendshipQuery(queryParams);
-  const { data: findFriendshipData, isLoading: findFriendshipLoading, refetch: refetchFindFriendship, isRefetching: isFindFriendshipRefetching } = useFriendshipQuery(queryParams);
+  const { data: findFriendshipData, isLoading: findFriendshipLoading, refetch: refetchFindFriendship, isRefetching: isFindFriendshipRefetching } = useFindFriendshipQuery(queryParams);
   const { mutate: sendFriendship, isPending: isFriendshipPending, error: errorFriendship } = useMutationFriendshipQuery(Array.isArray(friendshipData) ? friendshipData[0]?.id : '');
 
   const pageState = React.useState({
@@ -32,6 +32,13 @@ export default function FriendsPage() {
     isModalFriendshipVisible: false,
     generalError: '',
   });
+
+  const findFriendshipAsFriendshipList = findFriendshipData?.map(friend => ({
+    friend,
+    currentStatus: null,
+  })) as FriendshipList[];
+
+
 
   return (
     <>
@@ -51,16 +58,16 @@ export default function FriendsPage() {
           }}
         />
       </Appbar.Header>
-      <AppSafeArea space={0} errorMessage={pageState[0].generalError} onDismissError={() => pageState[1]({ ...pageState[0], generalError: '' })} refreshing={isThreadRefetching} padding={{ top: 12, left: 0, right: 0 }}>
+      <AppSafeArea space={0} errorMessage={pageState[0].generalError} onDismissError={() => pageState[1]({ ...pageState[0], generalError: '' })} refreshing={isFriendshipRefetching} padding={{ top: 12, left: 0, right: 0 }}>
         <FlatList
           data={friendshipData || []}
           keyExtractor={(item: FriendshipList) => item.id || ''}
           style={{ backgroundColor: 'black', minHeight: '100%' }}
           renderItem={({ item }) => {
-            return <FriendListItem friendship={item} />;
+            return <FriendListItem friendship={item} onPress={(friend) => router.push({ pathname: '/profile/[id]', params: { id: friend.id } })} />;
           }}
           ItemSeparatorComponent={() => <Divider style={{ marginVertical: 12 }} />}
-          refreshControl={<RefreshControl refreshing={isFriendshipPending} onRefresh={refetchThread} />}
+          refreshControl={<RefreshControl refreshing={isFriendshipPending} onRefresh={refetchFriendship} />}
           contentContainerStyle={{ flexGrow: 1 }}
           onScroll={(event) => {
             pageState[1]({
@@ -68,7 +75,8 @@ export default function FriendsPage() {
               isSpeedDialVisible: event.nativeEvent.contentOffset.y < 100,
             });
           }}
-          ListEmptyComponent={threadLoading || threadData?.length === 0 ? <Text style={{ textAlign: 'center', marginTop: 32, color: 'white' }}>No conversations found.</Text> : null}
+          ListEmptyComponent={friendshipLoading || !friendshipData || friendshipData.length <= 0 ?
+            <Text style={{ textAlign: 'center', marginTop: 32, color: 'white' }}>You not have any friends.</Text> : null}
         />
         <SpeedDial
           visible={pageState[0].isSpeedDialVisible}
@@ -84,16 +92,24 @@ export default function FriendsPage() {
           }}
           onPress={() => {
             console.log('New conversation pressed');
+            refetchFindFriendship();
             pageState[1]({ ...pageState[0], isSpeedDialExtended: false, isModalFriendshipVisible: true });
             // router.push('/conversations/new');
           }}
         />
         <FriendshipModal
-          friendships={friendshipData || []}
+          friendships={findFriendshipAsFriendshipList}
+          isLoading={findFriendshipLoading}
+          isRefresh={isFindFriendshipRefetching}
+          onRefresh={refetchFindFriendship}
           isModalVisible={pageState[0].isModalFriendshipVisible}
           onDismiss={() => pageState[1]({ ...pageState[0], isModalFriendshipVisible: false })}
-          onRequestFriendship={(friendship) => {
-            console.log('Requesting friendship:', friendship);
+          onClickFriendListItem={(friend) => {
+            router.push({ pathname: '/profile/[id]', params: { id: friend.id } });
+          }}
+          onSearchFriend={(searchText) => {
+            setQueryParams(prev => ({ ...prev, search: searchText }))
+            console.log(`TEST ${searchText}-${queryParams.search}`)
           }}
         />
       </AppSafeArea>

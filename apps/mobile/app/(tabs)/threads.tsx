@@ -3,12 +3,12 @@ import React, { useEffect } from 'react';
 import { Appbar, Divider, Text } from 'react-native-paper';
 import AppSafeArea from '@/components/AppSafeArea';
 import { useRouter } from 'expo-router';
-import { QueryParamsData, ThreadList, ThreadPublic } from '@messanger/types';
+import { FriendshipList, QueryParamsData, ThreadList, ThreadPublic } from '@messanger/types';
 import { useAuthStore } from '@/store/auth';
 import SpeedDial from '@/components/SpeedDial';
 import { useMutationThreadQuery, useThreadQuery } from '@/services/queries/threads-query';
 import ThreadListItem from '@/components/ListItem/ThreadListItem';
-import FriendshipModal from '@/components/FriendshipModal';
+import FriendshipModal from '@/components/Modal/FriendshipModal';
 import { useFriendshipQuery, useMutationFriendshipQuery } from '@/services/queries/friendship-query';
 
 export default function ThreadsPage() {
@@ -42,6 +42,8 @@ export default function ThreadsPage() {
     isModalFriendshipVisible: false,
     generalError: '',
   });
+
+
 
   return (
     <>
@@ -121,9 +123,7 @@ export default function ThreadsPage() {
           friendships={friendshipData || []}
           isModalVisible={pageState[0].isModalFriendshipVisible}
           onDismiss={() => pageState[1]({ ...pageState[0], isModalFriendshipVisible: false })}
-          onRequestFriendship={(friendship) => {
-            console.log('Requesting friendship:', friendship);
-          }}
+          onClickFriendListItem={(friend) => router.push({ pathname: '/profile/[id]', params: { id: friend.id } })}
         />
       </AppSafeArea>
     </>

@@ -9,6 +9,7 @@ import { findFriendship, getFriendshipById, getFriendships, postFriendship, putF
 export const friendshipKey = {
   all: ['friendship'] as const,
   detail: (id: string) => ['friendship', id] as const,
+  findFriend: ['find-friendship'] as const,
 };
 
 export function useFriendshipQuery(queryParams?: QueryParamsData) {
@@ -36,10 +37,10 @@ export function useFriendshipDetailQuery(friendshipId: string) {
 
 export function useFindFriendshipQuery(queryParams: QueryParamsData) {
   return useQuery({
-    queryKey: friendshipKey.all,
+    queryKey: friendshipKey.findFriend,
     queryFn: () => findFriendship(queryParams),
     select: (data) => (Array.isArray(data) ? data : data?.data?.items ?? []),
-    placeholderData: () => queryClient.getQueryData(friendshipKey.all),
+    placeholderData: () => queryClient.getQueryData(friendshipKey.findFriend),
     retry: false,
     enabled: !!queryParams.search,
   });
