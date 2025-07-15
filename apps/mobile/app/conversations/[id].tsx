@@ -16,7 +16,7 @@ import { getDataFromLocalStorage } from '@/utils/local-storage';
 
 export default function ConversationDetail() {
   const params = useLocalSearchParams();
-  const threadId = params.id as string | undefined;
+  const threadId = params?.id as string | undefined;
   const [privKey, setPrivKey] = React.useState<string | null>(null);
 
   const { user } = useAuthStore();
@@ -100,17 +100,17 @@ export default function ConversationDetail() {
                   </Text>
                 </StackWrapper>
                 <Menu visible={pageState[0].openUpMenuHeader} onDismiss={() => pageState[1]({ ...pageState[0], openUpMenuHeader: false })} anchor={<IconButton icon={() => <MaterialIcons name="more-vert" size={24} color="black" />} onPress={() => pageState[1]({ ...pageState[0], openUpMenuHeader: true })} />}>
-                  <Menu.Item onPress={() => {}} title="Item 1" />
-                  <Menu.Item onPress={() => {}} title="Item 2" />
+                  <Menu.Item onPress={() => { }} title="Item 1" />
+                  <Menu.Item onPress={() => { }} title="Item 2" />
                   <Divider />
-                  <Menu.Item onPress={() => {}} title="Item 3" />
+                  <Menu.Item onPress={() => { }} title="Item 3" />
                 </Menu>
               </StackWrapper>
             ),
           }}
         />
 
-        <FlatList data={data ?? []} style={{ height: '90%' }} keyExtractor={(item, idx) => item.id ?? `temp-${idx}`} renderItem={({ item }) => <ConversationBubleChat message={item} interlocutorsId={threadId} authenticatedUser={user ?? undefined} />} ItemSeparatorComponent={() => <Spacer size={{ height: 8 }} />} refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />} inverted />
+        <FlatList data={data ?? []} style={{ height: '90%' }} keyExtractor={(item, idx) => item?.id ?? `temp-${idx}`} renderItem={({ item }) => <ConversationBubleChat message={item} authenticatedUser={user ?? undefined} />} ItemSeparatorComponent={() => <Spacer size={{ height: 8 }} />} refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />} inverted />
 
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <StackWrapper

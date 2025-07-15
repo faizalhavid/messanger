@@ -18,7 +18,9 @@ type FriendshipModalProps = {
 };
 export default function FriendshipModal({ title = 'Title Friend Modal', friendships, isModalVisible, onDismiss, onSearchFriend, onClickFriendListItem, isRefresh, onRefresh, isLoading }: FriendshipModalProps) {
   const { user } = useAuthStore();
-  const [componentState, setComponentState] = useState({ search: '' });
+  const [componentState, setComponentState] = useState({
+    search: '',
+  });
 
   const handleSearchFriend = (value: string) => {
     setComponentState((prev) => ({ ...prev, search: value }));
@@ -44,7 +46,7 @@ export default function FriendshipModal({ title = 'Title Friend Modal', friendsh
           data={friendships}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) =>
-            <FriendListItem friendship={item} onPress={() => onClickFriendListItem(item)} />} ListEmptyComponent={friendships.length === 0 ? <List.Item title="No friendships found." /> : null} />
+            <FriendListItem friendship={item} onPress={() => onClickFriendListItem(item)} />} ListEmptyComponent={(friendships ?? [])?.length === 0 ? <List.Item title="No friendships found." /> : null} />
       </Dialog.ScrollArea>
     </Dialog>
   );

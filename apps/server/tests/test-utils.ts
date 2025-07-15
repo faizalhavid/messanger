@@ -76,6 +76,7 @@ export class ProfileTest {
       firstName: string;
       lastName: string;
       avatar?: string;
+      description?: string;
     };
   }) {
     const { userId, profile } = props;
@@ -87,6 +88,7 @@ export class ProfileTest {
       data: {
         firstName: firstName,
         lastName: lastName,
+        description: profile.description ?? 'default',
         avatar: 'https://example.com/avatar.jpg',
         user: {
           connect: { id: userId },

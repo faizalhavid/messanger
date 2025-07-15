@@ -1,18 +1,58 @@
-import { ConversationUserProfile } from '@messanger/types';
 import React from 'react';
-import StackWrapper from './StackWrapper';
+import { View, StyleSheet } from 'react-native';
 import { Avatar } from 'react-native-paper';
+import StackWrapper from './StackWrapper';
+import { UserProfileThread } from '@messanger/types';
 
-interface ParticipantsAvatarProps {
-  participants: ConversationUserProfile[];
-}
+export default function ParticipantsAvatar({ participants, size = 20 }: { participants: UserProfileThread[], size?: number }) {
+  const maxVisible = 5;
+  const visibleParticipants = participants.slice(0, maxVisible);
+  const remainingCount = participants.length - maxVisible;
 
-export default function ParticipantsAvatar({ participants }: ParticipantsAvatarProps) {
   return (
-    <StackWrapper flexDirection="row" space={-5}>
-      {participants.map((participant) => (
-        <Avatar.Image key={participant.id} source={participant.avatar ? { uri: participant.avatar } : { uri: 'https://via.placeholder.com/40' }} size={40} style={{ marginLeft: 5, marginRight: -10 }} />
-      ))}
+    <StackWrapper flexDirection='row' alignItems='center' style={{ position: 'relative' }}>
+      {visibleParticipants.map((participant, index) => {
+        // Kalau ini avatar terakhir DAN masih ada sisa
+        const isLastVisible = index === maxVisible - 1 && remainingCount > 0;
+
+        if (isLastVisible) {
+          return (
+            <Avatar.Text
+              key={`more-${participant.id}`}
+              size={size}
+              label={`+${remainingCount}`}
+              style={[
+                {
+                  backgroundColor: '#ccc',
+                  borderWidth: 1,
+                  borderColor: '#fff',
+                },
+                index !== 0 && { marginLeft: -12 },
+              ]}
+              labelStyle={{ fontSize: size * 0.5 }}
+            />
+          );
+        }
+
+        return (
+          <Avatar.Image
+            key={participant.id}
+            size={size}
+            source={
+              participant.avatar
+                ? { uri: participant.avatar }
+                : { uri: 'https://via.placeholder.com/40' }
+            }
+            style={[
+              {
+                borderWidth: 1,
+                borderColor: '#fff',
+              },
+              index !== 0 && { marginLeft: -12 },
+            ]}
+          />
+        );
+      })}
     </StackWrapper>
   );
 }

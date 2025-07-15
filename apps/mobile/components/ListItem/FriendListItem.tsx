@@ -15,33 +15,20 @@ type FriendListItem = {
 
 
 export default function FriendListItem({ friendship, onPress }: FriendListItem) {
-  // Todo : Format the createdAt date to a more readable format
-  const handleAvatarPress = () => {
-    console.log('Avatar pressed');
-  };
   console.log(friendship);
   return (
     <List.Item
       key={friendship.id}
       style={StyleSheet.flatten([{ paddingVertical: 8, paddingHorizontal: 16 }])}
       onPress={() => onPress}
-      title={() => (
-        <StackWrapper flexDirection="row" alignItems="center" justifyContent="space-between">
-          <StackWrapper flexDirection="row" alignItems="center" justifyContent="space-between">
-            <Text variant="titleMedium" numberOfLines={1} ellipsizeMode="tail" style={{ maxWidth: '80%' }}>
-              {friendship?.friend?.username}
-            </Text>
-          </StackWrapper>
-          <Text variant="bodySmall">{DateTimeFormatUtils.convertDateTimeToHuman(friendship?.currentStatus?.changedAt ?? '')}</Text>
-        </StackWrapper>
-      )}
+      title={friendship?.friend?.username}
       description={() => (
         <Text variant="bodyMedium" numberOfLines={1} ellipsizeMode="tail" style={{ maxWidth: '80%' }}>
           {friendship?.friend?.description}
         </Text>
       )}
       left={() => (
-        <Pressable onPress={handleAvatarPress} hitSlop={10}>
+        <Pressable onPress={() => onPress} hitSlop={10}>
           <Avatar.Image size={48} source={{ uri: friendship?.friend?.avatar || 'https://via.placeholder.com/150' }} />
         </Pressable>
       )}

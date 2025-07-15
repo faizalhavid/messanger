@@ -1,4 +1,4 @@
-import { ConversationPublic, ConversationUserProfile } from '@messanger/types';
+import { ConversationPublic, ConversationUserProfile, ThreadList, ThreadPublic, UserProfileThread } from '@messanger/types';
 import React from 'react';
 import { Avatar, Badge, List, Text } from 'react-native-paper';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -6,70 +6,73 @@ import StackWrapper from '../StackWrapper';
 import ParticipantsAvatar from '../ParticipantsAvatar';
 
 type SenderProps = {
-  threadId: string;
-  title: string;
-  type: 'PRIVATE' | 'GROUP';
-  lastConversation?: ConversationPublic;
-  unreadCount?: number;
-  participants?: ConversationUserProfile[];
-  creator?: ConversationUserProfile;
-  avatar?: string | undefined | null;
+  thread: ThreadList;
   onPress?: () => void;
-  //onAvatarPress?: (sender: ConversationUserProfile) => void;
+  onAvatarPress: (data: ThreadPublic) => void;
 };
 
-export default function ThreadListItem({ type, lastConversation, unreadCount = 2, participants, creator, avatar, onPress, ...props }: SenderProps) {
+export default function ThreadListItem({ thread, onPress, onAvatarPress }: SenderProps) {
+
+
   // Todo : Format the createdAt date to a more readable format
-  const time = lastConversation?.createdAt ? new Date(lastConversation.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
-  const handleAvatarPress = () => {
-    console.log('Avatar pressed');
-  };
+  const time = thread?.lastConversation?.createdAt ? new Date(thread?.lastConversation.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+  const avatarThread = thread.type === 'PRIVATE' ? thread.lastConversation?.sender?.avatar : thread.avatar;
+  const titleThread = thread.type === 'PRIVATE' ? thread.lastConversation?.sender?.username : thread.name;
 
   return (
     <List.Item
-      key={props.threadId}
+      key={thread.id}
       style={StyleSheet.flatten([{ paddingVertical: 8, paddingHorizontal: 16 }])}
-      onPress={onPress}
+      onPress={() => onPress?.()}
       title={() => (
         <StackWrapper flexDirection="row" alignItems="center" justifyContent="space-between">
-          <StackWrapper flexDirection="row" alignItems="center" justifyContent="space-between">
-            <Text variant="titleMedium" numberOfLines={1} ellipsizeMode="tail" style={{ maxWidth: '80%' }}>
-              {props.title}
-            </Text>
-          </StackWrapper>
+          <Text variant="titleMedium" numberOfLines={1} ellipsizeMode="tail" style={{ flex: 1, maxWidth: '75%' }}>
+            {titleThread}
+          </Text>
+          {
+            (thread?.type === 'GROUP' && thread?.participants) && (
+              <ParticipantsAvatar participants={thread?.participants} size={20} />
+            )
+          }
           <Text variant="bodySmall">{time}</Text>
         </StackWrapper>
       )}
       description={() => (
         <StackWrapper flexDirection="row" alignItems="center" justifyContent="space-between">
-          {type === 'PRIVATE' ? (
+          {thread.type === 'PRIVATE' ? (
             <Text variant="bodyMedium" numberOfLines={1} ellipsizeMode="tail" style={{ maxWidth: '80%' }}>
-              {lastConversation?.content}
+              {thread.lastConversation?.content}
             </Text>
           ) : (
             <StackWrapper flexDirection="row" space={1}>
-              <Text variant="bodyMedium" numberOfLines={1} ellipsizeMode="tail" style={{ maxWidth: '80%', fontWeight: '500' }}>
-                {lastConversation?.sender?.username}
+              <Text variant="bodyMedium" numberOfLines={1} ellipsizeMode="tail" style={{ maxWidth: '80%', fontWeight: '500', fontStyle: 'italic', marginRight: 2 }}>
+                @{thread?.lastConversation?.sender?.username}
               </Text>
-              <Text variant="bodyMedium" numberOfLines={1} ellipsizeMode="tail" style={{ maxWidth: '80%' }}>
-                {lastConversation?.content}
+              <Text variant="bodyMedium" numberOfLines={1} ellipsizeMode="tail" style={{ maxWidth: '80%', fontWeight: '100', fontStyle: 'italic', }}>
+                {thread?.lastConversation?.content}
               </Text>
             </StackWrapper>
           )}
-          {unreadCount > 0 && <Badge>{unreadCount}</Badge>}
+          {(thread.unreadCount ?? 0) > 0 && <Badge>{thread.unreadCount}</Badge>}
         </StackWrapper>
       )}
       left={() => (
-        <Pressable onPress={handleAvatarPress} hitSlop={10}>
-          <Avatar.Image size={48} source={{ uri: avatar || 'https://via.placeholder.com/150' }} />
+        <Pressable
+          onPress={(e) => {
+            e.stopPropagation();
+            onAvatarPress?.(thread);
+          }}
+          hitSlop={10}
+        >
+          <Avatar.Image size={48} source={{ uri: avatarThread || 'https://via.placeholder.com/150' }} />
         </Pressable>
       )}
-      right={() => {
-        if (type === 'GROUP' && participants) {
-          return <ParticipantsAvatar participants={participants} />;
-        }
-        return null;
-      }}
+    // right={() => {
+    //   if (thread?.type === 'GROUP' && thread?.participants) {
+    //     return <ParticipantsAvatar participants={thread?.participants} />;
+    //   }
+    //   return null;
+    // }}
     />
   );
 }

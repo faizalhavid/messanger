@@ -1,6 +1,6 @@
-import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
-import React, { useEffect } from 'react';
-import { Appbar, Divider, Text } from 'react-native-paper';
+import { FlatList, RefreshControl, StyleSheet, TextInput, View } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { Appbar, Divider, Searchbar, Text } from 'react-native-paper';
 import AppSafeArea from '@/components/AppSafeArea';
 import { useRouter } from 'expo-router';
 import { FriendshipList, QueryParamsData, ThreadList, ThreadPublic } from '@messanger/types';
@@ -10,6 +10,7 @@ import { useMutationThreadQuery, useThreadQuery } from '@/services/queries/threa
 import ThreadListItem from '@/components/ListItem/ThreadListItem';
 import FriendshipModal from '@/components/Modal/FriendshipModal';
 import { useFriendshipQuery, useMutationFriendshipQuery } from '@/services/queries/friendship-query';
+import ProfileOverviewModal from '@/components/Modal/ProfileOverviewModal';
 
 export default function ThreadsPage() {
   const router = useRouter();
@@ -36,57 +37,81 @@ export default function ThreadsPage() {
   const { data: findFriendshipData, isLoading: findFriendshipLoading, refetch: refetchFindFriendship, isRefetching: isFindFriendshipRefetching } = useFriendshipQuery(queryParams.friendship);
   const { mutate: sendFriendship, isPending: isFriendshipPending, error: errorFriendship } = useMutationFriendshipQuery(Array.isArray(friendshipData) ? friendshipData[0]?.id : '');
 
-  const pageState = React.useState({
+  const [pageState, setPageState] = React.useState({
     isSpeedDialVisible: true,
     isSpeedDialExtended: true,
     isModalFriendshipVisible: false,
+    isModalProfileOverviewVisible: false,
+    isSearchBarExpended: false,
     generalError: '',
+    selectedThread: {} as ThreadList,
   });
 
+  const searchRef = useRef<TextInput>(null);
+
+  console.log(threadData)
 
 
   return (
     <>
       <Appbar.Header>
         <Appbar.Content title="Messages" />
-        <Appbar.Action
-          icon="magnify"
-          onPress={() => {
-            setQueryParams({ ...queryParams, thread: { ...queryParams.thread, search: '' } });
-          }}
-        />
+        {pageState.isSearchBarExpended ? (
+          <Searchbar
+            ref={searchRef}
+            showDivider
+            style={{ padding: 0 }}
+            value={queryParams.thread.search ?? ''}
+            placeholder="Search"
+            onChangeText={(text) =>
+              setQueryParams({
+                ...queryParams,
+                thread: { ...queryParams.thread, search: text },
+              })
+            }
+            loading={threadLoading}
+            onBlur={() => {
+              setPageState({ ...pageState, isSearchBarExpended: false });
+            }}
+            autoFocus
+          />
+        ) : (
+          <Appbar.Action
+            icon="magnify"
+            onPress={() => {
+              setPageState({ ...pageState, isSearchBarExpended: true });
+            }}
+          />
+        )}
+
         <Appbar.Action
           icon="dots-vertical"
           onPress={() => {
             console.log('Open menu');
-            pageState[1]({ ...pageState[0], isSpeedDialExtended: !pageState[0].isSpeedDialExtended });
+            setPageState({ ...pageState, isSpeedDialVisible: !pageState.isSpeedDialVisible });
+
           }}
         />
       </Appbar.Header>
-      <AppSafeArea space={0} errorMessage={pageState[0].generalError} onDismissError={() => pageState[1]({ ...pageState[0], generalError: '' })} refreshing={isThreadRefetching} padding={{ top: 12, left: 0, right: 0 }}>
+      <AppSafeArea space={0} errorMessage={pageState.generalError} onDismissError={() => setPageState({ ...pageState, generalError: '' })} refreshing={isThreadRefetching} padding={{ top: 12, left: 0, right: 0 }}>
         <FlatList
           data={threadData}
           keyExtractor={(item: ThreadList) => item.id || ''}
           style={{ backgroundColor: 'black', minHeight: '100%' }}
           renderItem={({ item }) => {
-            const avatarThread = item.type === 'PRIVATE' ? item.lastConversation?.sender?.avatar : item.avatar;
-            const titleThread = item.type === 'PRIVATE' ? item.lastConversation?.sender?.username : item.name;
             return (
               <ThreadListItem
-                threadId={item.id}
-                title={titleThread ?? ''}
-                creator={item?.creator}
-                participants={item.participants}
+                thread={item}
                 onPress={() => {
                   console.log('Selected conversation', item);
                   if (item.id) {
                     router.push({ pathname: '/conversations/[id]', params: { id: item.id } });
                   }
                 }}
-                unreadCount={item.unreadCount || 0}
-                lastConversation={item.lastConversation}
-                avatar={avatarThread}
-                type={item.type}
+                onAvatarPress={(data) => {
+                  setPageState({ ...pageState, isModalProfileOverviewVisible: true, selectedThread: data ?? null });
+                }}
+
               />
             );
           }}
@@ -94,16 +119,16 @@ export default function ThreadsPage() {
           refreshControl={<RefreshControl refreshing={isThreadRefetching} onRefresh={refetchThread} />}
           contentContainerStyle={{ flexGrow: 1 }}
           onScroll={(event) => {
-            pageState[1]({
-              ...pageState[0],
-              isSpeedDialVisible: event.nativeEvent.contentOffset.y < 100,
-            });
+            setPageState({
+              ...pageState,
+              isSpeedDialExtended: event.nativeEvent.contentOffset.y > 100,
+            })
           }}
           ListEmptyComponent={threadLoading || threadData?.length === 0 ? <Text style={{ textAlign: 'center', marginTop: 32, color: 'white' }}>No conversations found.</Text> : null}
         />
         <SpeedDial
-          visible={pageState[0].isSpeedDialVisible}
-          extended={pageState[0].isSpeedDialExtended}
+          visible={pageState.isSpeedDialVisible}
+          extended={pageState.isSpeedDialExtended}
           label="New Message"
           animateFrom="right"
           iconMode="static"
@@ -115,15 +140,21 @@ export default function ThreadsPage() {
           }}
           onPress={() => {
             console.log('New conversation pressed');
-            pageState[1]({ ...pageState[0], isSpeedDialExtended: false, isModalFriendshipVisible: true });
+            setPageState({ ...pageState, isSpeedDialExtended: false, isModalFriendshipVisible: true });
             // router.push('/conversations/new');
           }}
         />
         <FriendshipModal
           friendships={friendshipData || []}
-          isModalVisible={pageState[0].isModalFriendshipVisible}
-          onDismiss={() => pageState[1]({ ...pageState[0], isModalFriendshipVisible: false })}
+          isModalVisible={pageState.isModalFriendshipVisible}
+          onDismiss={() => setPageState({ ...pageState, isModalFriendshipVisible: false })}
           onClickFriendListItem={(friend) => router.push({ pathname: '/profile/[id]', params: { id: friend.id } })}
+        />
+        <ProfileOverviewModal
+          isVisible={pageState.isModalProfileOverviewVisible}
+          avatar={pageState.selectedThread?.avatar ?? ''}
+          name={pageState.selectedThread?.name ?? ''}
+          onClose={() => setPageState({ ...pageState, isModalProfileOverviewVisible: false })}
         />
       </AppSafeArea>
     </>

@@ -7,17 +7,16 @@ import { Keyboard } from 'react-native';
 
 type BubbleProps = {
   message?: ConversationPublic;
-  interlocutorsId?: string;
   authenticatedUser?: UserPublic;
   onPress?: () => void;
   isFocused?: boolean;
   onFocus?: (id: string) => void;
 };
 
-export default function ConversationBubleChat({ message, interlocutorsId, authenticatedUser, onPress, isFocused = false, onFocus }: BubbleProps) {
+export default function ConversationBubleChat({ message, authenticatedUser, onPress, isFocused = false, onFocus }: BubbleProps) {
   if (!message) return null;
 
-  const isMessageFromCurrentUser = authenticatedUser?.id === message?.sender?.user.id || authenticatedUser?.id === message?.receiver?.user.id;
+  const isMessageFromCurrentUser = authenticatedUser?.id === message?.sender?.id;
 
   const handlePress = () => {
     onPress?.();
@@ -56,7 +55,7 @@ export default function ConversationBubleChat({ message, interlocutorsId, authen
               fontWeight: '500',
             }}
           >
-            {isMessageFromCurrentUser ? 'You' : message?.sender?.firstName}
+            {isMessageFromCurrentUser ? 'You' : message?.sender?.username}
           </Text>
         </StackWrapper>
         <Text ellipsizeMode="tail" style={{ color: '#fff', maxWidth: '85%' }}>
@@ -69,7 +68,7 @@ export default function ConversationBubleChat({ message, interlocutorsId, authen
               minute: '2-digit',
             })}
           </Text>
-          <MaterialCommunityIcons name="check-all" size={16} color={message?.isRead ? '#fff' : '#ccc'} style={{ marginLeft: 8 }} />
+          <MaterialCommunityIcons name="check-all" size={16} color={message?.status?.isRead ? '#fff' : '#ccc'} style={{ marginLeft: 8 }} />
         </StackWrapper>
       </Surface>
     </TouchableRipple>

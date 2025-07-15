@@ -15,14 +15,17 @@ export function useConversationsQuery(threadId: string, privateKey: string, quer
     queryKey: conversationKeys.all,
     queryFn: async () => {
       const data = await getConversations(threadId, queryParams);
-      if (privateKey && data?.data?.items) {
+      console.log('retrieved data conversation', data);
+
+      if (data?.data?.items) {
         const decryptedItems = await Promise.all(
           data.data.items.map(async (item: any) => {
             if (item.content) {
               try {
                 const decryptedContent = await decryptionData(privateKey, item.content);
                 return { ...item, content: decryptedContent };
-              } catch {
+              } catch (e) {
+                console.error(`error ${e}`)
                 return item;
               }
             }

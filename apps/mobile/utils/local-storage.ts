@@ -21,10 +21,16 @@ export const getDataFromLocalStorage = async (key: string): Promise<any> => {
       console.warn(`No data found for key: ${key}`);
       return null;
     }
+
     console.log(`Retrieved ${key} from storage:`, value);
-    return JSON.parse(value);
+    try {
+      return JSON.parse(value);
+    } catch {
+      return value; // fallback: raw string
+    }
   } catch (error) {
     console.error(`Error retrieving ${key} from storage:`, error);
     return null;
   }
 };
+

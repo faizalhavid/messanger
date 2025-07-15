@@ -75,8 +75,14 @@ export default function FriendsPage() {
               isSpeedDialVisible: event.nativeEvent.contentOffset.y < 100,
             });
           }}
-          ListEmptyComponent={friendshipLoading || !friendshipData || friendshipData.length <= 0 ?
-            <Text style={{ textAlign: 'center', marginTop: 32, color: 'white' }}>You not have any friends.</Text> : null}
+          ListEmptyComponent={
+            !friendshipLoading && ((friendshipData ?? [])?.length === 0) ? (
+              <Text style={{ textAlign: 'center', marginTop: 32, color: 'white' }}>
+                You don’t have any friends.
+              </Text>
+            ) : null
+          }
+
         />
         <SpeedDial
           visible={pageState[0].isSpeedDialVisible}

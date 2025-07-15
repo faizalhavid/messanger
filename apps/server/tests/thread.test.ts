@@ -3,6 +3,11 @@ import { UserTest, usersTest, ProfileTest, ThreadTest, ConversationTest, Convers
 
 describe('Thread API', () => {
     beforeEach(async () => {
+        await UserTest.deleteAll();
+        await ProfileTest.deleteAll();
+        await ThreadTest.deleteAll();
+        await ConversationTest.deleteAll();
+
         await UserTest.create(usersTest[0]);
         await UserTest.create(usersTest[1]);
         await UserTest.create(usersTest[2]);
