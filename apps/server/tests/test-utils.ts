@@ -2,6 +2,7 @@ import { prismaClient } from '@messanger/prisma';
 import { randomUUID } from 'crypto';
 import { WsEventName, WsBroadcastEvent } from '@messanger/types';
 import { generateKeyPairSync } from 'crypto';
+import { exportKey, generateKeyPair } from '@messanger/utils';
 
 interface UserTestProps {
   id: string;
@@ -15,6 +16,8 @@ interface UserTestProps {
     avatar?: string;
   };
 }
+
+
 
 const userProfiles: UserTestProps['profile'][] = [
   { firstName: 'Test', lastName: 'User', avatar: 'https://example.com/avatar.jpg' },
@@ -40,6 +43,7 @@ export function generateWSData(event: WsEventName, data: {}): WsBroadcastEvent {
 export class UserTest {
   static async create(props: UserTestProps) {
     let { id, username, email, token } = props;
+    const { publicKey, privateKey } = await generateKeyPair()
     if (!id) {
       id = crypto.randomUUID();
     }
@@ -52,6 +56,7 @@ export class UserTest {
           algorithm: 'bcrypt',
           cost: 10,
         }),
+        pubKey: await exportKey(publicKey),
         token: token,
       },
     });

@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { getConversationById, getConversations, postConversation, putConversation } from '@/services/apis/conversation';
-import { ConversationPublic, ConversationRequest, QueryParamsData } from '@messanger/types';
+import { ConversationPublic, ConversationRequest, PaginatedData, PaginatedResponse, QueryParamsData } from '@messanger/types';
 import { queryClient } from '.';
 import { decryptionData } from '@utils/crypto';
 import { getDataFromLocalStorage } from '@/utils/local-storage';
@@ -23,7 +23,7 @@ export function useConversationsQuery(threadId: string, privateKey: string, quer
             if (item.content) {
               try {
                 const decryptedContent = await decryptionData(privateKey, item.content);
-                return { ...item, content: decryptedContent };
+                return { ...item, content: decryptedContent } as ConversationPublic;
               } catch (e) {
                 console.error(`error ${e}`)
                 return item;
@@ -32,11 +32,11 @@ export function useConversationsQuery(threadId: string, privateKey: string, quer
             return item;
           })
         );
-        return { ...data, data: { ...data.data, items: decryptedItems } };
+        return { ...data, data: { ...data.data, items: decryptedItems }, } as PaginatedResponse<ConversationPublic>;
       }
       return data;
     },
-    select: (data) => (Array.isArray(data) ? data : data?.data?.items ?? []),
+    select: (data) => (Array.isArray(data) ? data : data?.data ?? undefined),
     placeholderData: () => queryClient.getQueryData(conversationKeys.all),
     enabled: !!threadId && !!privateKey,
   });

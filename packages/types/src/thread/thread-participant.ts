@@ -1,6 +1,6 @@
 import type { Thread, ThreadParticipant, User, Profile } from '@prisma/client';
 import { ThreadModelMapper, type ThreadPublic } from './thread';
-import type { UserProfileThread } from '@messanger/types';
+import { UserModelMapper, type UserProfileThread } from '@messanger/types';
 
 export interface ThreadParticipantsRequest {
   // threadId: string;
@@ -25,7 +25,7 @@ export namespace ThreadParticipantModelMapper {
 
     return {
       ...rest,
-      user: participant.user ? { ...participant.user } : undefined,
+      user: participant.user ? UserModelMapper.fromUserToUserProfileThread(participant.user) : undefined,
       thread: participant.thread ? ThreadModelMapper.fromThreadToThreadPublic(participant.thread) : undefined,
     };
   }
@@ -33,11 +33,12 @@ export namespace ThreadParticipantModelMapper {
   export function fromThreadParticipantToUserProfileThread(participant: ThreadParticipant & { user?: User & { profile?: Profile } }): UserProfileThread | undefined {
     if (!participant.user) return undefined;
 
-    const { id, username, profile } = participant.user;
+    const { id, username, profile, pubKey } = participant.user;
     return {
       id,
       username,
       avatar: profile?.avatar ?? null,
+      pubKey: pubKey ?? ''
     };
   }
 

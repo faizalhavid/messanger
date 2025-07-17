@@ -48,7 +48,11 @@ export default function ConversationDetail() {
       });
       return;
     }
+    console.log('aaaa', user?.pubKey);
+    // @ts-ignore
+    const participantPubKey = data?.thread.participants?.filter(p => p.pubKey).map(p => p.pubKey);
     const encryptedMessage = await encryptionData(user?.pubKey ?? '', validated.data.content);
+    console.log("encryption data", encryptedMessage);
     validated.data.content = encryptedMessage;
     sendMessage(validated.data as ConversationRequest, {
       onSuccess: (data) => {
@@ -70,7 +74,7 @@ export default function ConversationDetail() {
   return (
     // Todo : Fix the textinput changes after keyboard dismiss
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}>
-      <AppSafeArea loading={isLoading} errorMessage={pageState[0].generalError} onDismissError={() => pageState[1]({ ...pageState[0], generalError: '' })} refreshing={isRefetching} padding={{ top: 35 }}>
+      <AppSafeArea loading={isLoading || isPending} errorMessage={pageState[0].generalError} onDismissError={() => pageState[1]({ ...pageState[0], generalError: '' })} refreshing={isRefetching} padding={{ top: 35 }}>
         <Stack.Screen
           options={{
             headerTransparent: true,
@@ -143,13 +147,13 @@ export default function ConversationDetail() {
               size={24}
               onPress={() => {
                 handlePostMessage();
-                pageState[1]({
-                  ...pageState[0],
-                  message: {
-                    ...pageState[0].message,
-                    content: '',
-                  },
-                });
+                // pageState[1]({
+                //   ...pageState[0],
+                //   message: {
+                //     ...pageState[0].message,
+                //     content: '',
+                //   },
+                // });
               }}
               style={{ alignSelf: 'flex-end', marginRight: 16 }}
             />

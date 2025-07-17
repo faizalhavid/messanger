@@ -22,6 +22,7 @@ export type UserProfileThread = {
   username: string;
   avatar?: string | null;
   description?: string | null;
+  pubKey: string;
 };
 
 export interface UserProfile extends UserPublic {
@@ -39,6 +40,7 @@ export namespace UserModelMapper {
       username: user.username,
       avatar: user.profile?.avatar ?? null,
       description: user.profile?.description ?? null,
+      pubKey: user.pubKey ?? ''
     };
   }
 

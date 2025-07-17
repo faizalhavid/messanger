@@ -1,11 +1,11 @@
-import * as Random from 'expo-random';
+import * as Crypto from 'expo-crypto';
 import CryptoJS from 'crypto-js';
 
 /**
  * Generate 256-bit (32 bytes) hex key
  */
 export async function generateKey(): Promise<string> {
-  const keyBytes = await Random.getRandomBytesAsync(32); // 256-bit
+  const keyBytes = await Crypto.getRandomBytesAsync(32); // 256-bit
   return Buffer.from(keyBytes).toString('hex');
 }
 
@@ -13,7 +13,7 @@ export async function generateKey(): Promise<string> {
  * Encrypt content using AES with random IV
  */
 export async function encryptionData(secretKey: string, content: string): Promise<string> {
-  const ivBytes = await Random.getRandomBytesAsync(16); // 128-bit IV
+  const ivBytes = await Crypto.getRandomBytesAsync(16); // 128-bit IV
   const iv = CryptoJS.enc.Hex.parse(Buffer.from(ivBytes).toString('hex'));
   const key = CryptoJS.enc.Hex.parse(secretKey);
 
@@ -23,8 +23,8 @@ export async function encryptionData(secretKey: string, content: string): Promis
     padding: CryptoJS.pad.Pkcs7,
   });
 
-  // Format final: IV + ciphertext (hex + base64)
-  return iv.toString(CryptoJS.enc.Hex) + ':' + encrypted.toString(); // iv:cipher
+  console.log("vvvv", iv.toString(CryptoJS.enc.Hex) + ':' + encrypted.toString());
+  return iv.toString(CryptoJS.enc.Hex) + ':' + encrypted.toString();
 }
 
 /**

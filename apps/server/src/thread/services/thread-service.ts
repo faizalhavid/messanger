@@ -47,11 +47,11 @@ export class ThreadService {
             //     where: { userId, isDeleted: false }
             // },
           },
-          where: { conversationStatus: { some: { userId, isDeleted: false } } },
+
         },
         participants: {
           where: { isDeleted: false },
-          include: { user: true },
+          include: { user: { include: { profile: true } } },
         },
       },
     });
@@ -89,6 +89,7 @@ export class ThreadService {
               profile: thread.creator.profile === null ? undefined : thread.creator.profile,
             }
             : undefined,
+          participants: thread.participants
         },
         lastConversation
           ? {
@@ -102,7 +103,6 @@ export class ThreadService {
           }
           : undefined,
         unreadCounts.find((uc) => uc.conversationId === lastConversation?.id)?._count?.conversationId || 0,
-        thread.participants.map((p) => p.user)
       );
     });
 
@@ -190,11 +190,11 @@ export class ThreadService {
         creator: {
           include: { profile: true },
         },
+        participants: {
+          where: { isDeleted: false },
+          include: { user: { include: { profile: true } } },
+        },
       },
-      // participants: {
-      //     where: { isDeleted: false },
-      //     include: { user: { include: { profile: true } } },
-      // },
     });
 
     if (!thread) {
@@ -229,6 +229,7 @@ export class ThreadService {
           ...thread.creator,
           profile: thread.creator.profile === null ? undefined : thread.creator.profile,
         },
+        participants: thread.participants,
       }),
       items: ThreadModelMapper.fromThreadToThreadConversationList(
         conversations.map(({ conversationStatus, ...conversation }) => ({
@@ -284,9 +285,11 @@ export class ThreadService {
         },
         participants: {
           where: { isDeleted: false },
-          include: { user: true },
+          include: {
+            user: { include: { profile: true } },
+          },
         },
-      },
+      }
     });
 
     return ThreadModelMapper.fromThreadToThreadList(
@@ -298,10 +301,11 @@ export class ThreadService {
             profile: thread.creator.profile === null ? undefined : thread.creator.profile,
           }
           : undefined,
+        participants: thread.participants
       },
       undefined,
       undefined,
-      thread.participants.map((p) => p.user)
+
     );
   }
 

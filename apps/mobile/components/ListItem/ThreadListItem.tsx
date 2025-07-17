@@ -45,7 +45,7 @@ export default function ThreadListItem({ thread, onPress, onAvatarPress }: Sende
             </Text>
           ) : (
             <StackWrapper flexDirection="row" space={1}>
-              <Text variant="bodyMedium" numberOfLines={1} ellipsizeMode="tail" style={{ maxWidth: '80%', fontWeight: '500', fontStyle: 'italic', marginRight: 2 }}>
+              <Text variant="bodyMedium" numberOfLines={1} ellipsizeMode="tail" style={{ maxWidth: '80%', fontWeight: '500', fontStyle: 'italic', marginRight: 2, color: '#D9D9D9' }}>
                 @{thread?.lastConversation?.sender?.username}
               </Text>
               <Text variant="bodyMedium" numberOfLines={1} ellipsizeMode="tail" style={{ maxWidth: '80%', fontWeight: '100', fontStyle: 'italic', }}>
