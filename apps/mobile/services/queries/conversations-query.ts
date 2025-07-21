@@ -6,20 +6,19 @@ import { decryptionData } from '@utils/crypto';
 import { getDataFromLocalStorage } from '@/utils/local-storage';
 
 export const conversationKeys = {
-  all: ['conversation'] as const,
+  all: (threadId: string) => ['conversation', threadId] as const,
   detail: (id: string, threadId?: string) => ['conversation', id, threadId] as const,
 };
 
 export function useConversationsQuery(threadId: string, privateKey: string, queryParams?: QueryParamsData) {
   return useQuery({
-    queryKey: conversationKeys.all,
+    queryKey: conversationKeys.all(threadId),
     queryFn: async () => {
       const data = await getConversations(threadId, queryParams);
-      console.log('retrieved data conversation', data);
-
+      console.log("response", data);
       if (data?.data?.items) {
         const decryptedItems = await Promise.all(
-          data.data.items.map(async (item: any) => {
+          data.data.items.map(async (item: ConversationPublic) => {
             if (item.content) {
               try {
                 const decryptedContent = await decryptionData(privateKey, item.content);
@@ -37,7 +36,7 @@ export function useConversationsQuery(threadId: string, privateKey: string, quer
       return data;
     },
     select: (data) => (Array.isArray(data) ? data : data?.data ?? undefined),
-    placeholderData: () => queryClient.getQueryData(conversationKeys.all),
+    placeholderData: () => queryClient.getQueryData(conversationKeys.all(threadId)),
     enabled: !!threadId && !!privateKey,
   });
 }

@@ -2,9 +2,14 @@ import { queryClient } from '@/services/queries';
 import { conversationKeys } from '@/services/queries/conversations-query';
 import { useMessageStore } from '@/store/message';
 import { ConversationPublic, WsEventName, WsTopic } from '@messanger/types';
-import React, { createContext, useContext, useEffect, useRef } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useRef } from 'react';
 
-const WebSocketContext = createContext<WebSocket | null>(null);
+type WebSocketContextType = {
+  socket: WebSocket | null;
+  sendEvent: (event: WsEventName, data: any) => void;
+};
+
+const WebSocketContext = createContext<WebSocketContextType | null>(null);
 
 type WebSocketProviderProps = {
   token: string | null;
@@ -23,10 +28,8 @@ export const WebSocketProvider = ({ token, user, children }: WebSocketProviderPr
       const payload = JSON.parse(event.data);
       console.log('WebSocket message received:', payload);
       if (payload.event === WsEventName.ConversationCreated) {
-        const interlocutorId = user.id === payload.data.sender.user.id ? payload.data.receiver.user.id : payload.data.sender.user.id;
         const newMessage = payload.data as ConversationPublic;
-        const oldData = queryClient.getQueryData(conversationKeys.detail(interlocutorId ?? ''));
-        queryClient.setQueryData(conversationKeys.detail(interlocutorId ?? ''), (old: any) => {
+        queryClient.setQueryData(conversationKeys.all(newMessage.threadId ?? ''), (old: any) => {
           if (old && old.data && Array.isArray(old.data.items)) {
             return {
               ...old,
@@ -43,7 +46,6 @@ export const WebSocketProvider = ({ token, user, children }: WebSocketProviderPr
             success: true,
           };
         });
-        console.log('Old messages 2 from query cache:', oldData);
         //queryClient.invalidateQueries({ queryKey: conversationKeys.detail(interlocutorId) });
       }
     };
@@ -61,7 +63,17 @@ export const WebSocketProvider = ({ token, user, children }: WebSocketProviderPr
     return () => ws.close();
   }, [token]);
 
-  return <WebSocketContext.Provider value={wsRef.current}>{children}</WebSocketContext.Provider>;
+  const sendEvent = useCallback((event: WsEventName, data: any) => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ event, data }));
+    } else {
+      console.warn("WebSocket not connected, can't send:", event);
+    }
+  }, []);
+
+  return <WebSocketContext.Provider value={{ socket: wsRef.current, sendEvent }}>
+    {children}
+  </WebSocketContext.Provider>
 };
 
 export function useWebSocket() {

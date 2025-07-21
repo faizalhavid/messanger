@@ -15,7 +15,7 @@ export interface ConversationUserProfile {
   avatar?: string | null;
 }
 
-export interface ConversationPublic extends Omit<Conversation, 'updatedAt' | 'threadId' | 'senderId'> {
+export interface ConversationPublic extends Omit<Conversation, 'updatedAt' | 'senderId'> {
   // sender: ConversationUserProfile;
   sender?: ConversationUserProfile;
   encryptionMetadata?: ConversationEncryptionPublic;
@@ -32,7 +32,7 @@ export namespace ConversationModelMapper {
   }
 
   export function fromConversationToConversationPublic(conversation: Conversation & { sender?: User & { profile?: Profile } }, status?: ConversationStatusPublic, encryptionMetadata?: ConversationEncryptionPublic): ConversationPublic {
-    const { threadId, senderId, ...rest } = conversation;
+    const { senderId, ...rest } = conversation;
     return {
       ...rest,
       sender: conversation.sender ? fromUserToConversationUserProfile(conversation.sender) : undefined,

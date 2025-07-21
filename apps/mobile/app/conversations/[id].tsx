@@ -5,14 +5,15 @@ import ConversationBubleChat from '@/components/ConversationBubble';
 import Spacer from '@/components/Spacer';
 import StackWrapper from '@/components/StackWrapper';
 import { appColors } from '@/components/themes/colors';
-import { useConversationsQuery, useMutationConversationQuery } from '@/services/queries/conversations-query';
+import { conversationKeys, useConversationsQuery, useMutationConversationQuery } from '@/services/queries/conversations-query';
 import { useAuthStore } from '@/store/auth';
 import { MaterialIcons } from '@expo/vector-icons';
-import { ConversationPublic, ConversationRequest, conversationThreadSchema, WsEventName } from '@messanger/types';
+import { ConversationPublic, ConversationRequest, conversationThreadSchema, ThreadPublic, WsEventName } from '@messanger/types';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { Button, FlatList, Keyboard, KeyboardAvoidingView, Platform, RefreshControl, TextInput, TouchableWithoutFeedback, View } from 'react-native';
 import { Avatar, Divider, IconButton, Menu, Text, TextInput as TextInputPaper } from 'react-native-paper';
 import { getDataFromLocalStorage } from '@/utils/local-storage';
+import { queryClient } from '@/services/queries';
 
 export default function ConversationDetail() {
   const params = useLocalSearchParams();
@@ -25,6 +26,13 @@ export default function ConversationDetail() {
   }, []);
 
   const { data, isLoading, refetch, isRefetching } = useConversationsQuery(threadId!, privKey ?? '');
+  console.log("data", data);
+  // @ts-ignore
+  const thread = data?.thread as ThreadPublic;
+  // @ts-ignore
+  const conversations = data?.items as ConversationPublic[];
+
+
   const { mutate: sendMessage, isPending, error } = useMutationConversationQuery(threadId!);
   const pageState = React.useState({
     generalError: '',
@@ -48,12 +56,12 @@ export default function ConversationDetail() {
       });
       return;
     }
-    console.log('aaaa', user?.pubKey);
+
     // @ts-ignore
-    const participantPubKey = data?.thread.participants?.filter(p => p.pubKey).map(p => p.pubKey);
-    const encryptedMessage = await encryptionData(user?.pubKey ?? '', validated.data.content);
-    console.log("encryption data", encryptedMessage);
-    validated.data.content = encryptedMessage;
+    // const participantPubKey = data?.thread.participants?.filter(p => p.pubKey).map(p => p.pubKey);
+    // const encryptedMessage = await encryptionData(user?.pubKey ?? '', validated.data.content);
+    // console.log("encryption data", encryptedMessage);
+    // validated.data.content = encryptedMessage;
     sendMessage(validated.data as ConversationRequest, {
       onSuccess: (data) => {
         console.log('Message sent successfully', data);
@@ -114,7 +122,7 @@ export default function ConversationDetail() {
           }}
         />
 
-        <FlatList data={data ?? []} style={{ height: '90%' }} keyExtractor={(item, idx) => item?.id ?? `temp-${idx}`} renderItem={({ item }) => <ConversationBubleChat message={item} authenticatedUser={user ?? undefined} />} ItemSeparatorComponent={() => <Spacer size={{ height: 8 }} />} refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />} inverted />
+        <FlatList data={conversations ?? []} style={{ height: '90%' }} keyExtractor={(item, idx) => item?.id ?? `temp-${idx}`} renderItem={({ item }) => <ConversationBubleChat message={item} authenticatedUser={user ?? undefined} />} ItemSeparatorComponent={() => <Spacer size={{ height: 8 }} />} refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />} inverted />
 
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <StackWrapper

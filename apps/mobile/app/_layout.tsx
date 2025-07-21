@@ -13,7 +13,8 @@ import { PaperProvider } from 'react-native-paper';
 import { rnNavigationTheme, rnPaperTheme } from '@/components/themes';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '@/services/queries';
-import { WebSocketProvider } from '@/providers/WebSocketConnection';
+import { useWebSocket, WebSocketProvider } from '@/providers/WebSocketConnection';
+import { WsEventName } from '@messanger/types';
 
 
 export {
@@ -51,6 +52,7 @@ export default function RootLayout() {
     }
   }, [loaded]);
 
+
   if (!loaded) {
     return null;
   }
@@ -65,6 +67,11 @@ function RootLayoutNav() {
   const { user, token, isLoading, setToken, setUser, setLoading } = useAuthStore();
   const paperTheme = rnPaperTheme[colorScheme ?? 'light'];
   const PUBLIC_ROUTES = ['/threads', '/login', '/register', '/forgot-password'];
+  // send event ws online user
+  const ws = useWebSocket();
+  useEffect(() => {
+    ws?.sendEvent(WsEventName.UserOnline, { userId: user?.id, lastOnline: Date.now() });
+  }, [])
 
   if (isLoading) {
     return (
